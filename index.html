@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
+    <title>2D APEX </title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -22,7 +22,6 @@
         #result-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; }
         #return-btn { width: auto; padding: 12px 30px; font-size: 1.1rem; background: #ffcc00; color: #111; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
-        /* 💬 チャット宣伝エリアのスタイル */
         .chat-promo { background: #1f1f1f; border: 1px dashed #ffcc00; border-radius: 6px; padding: 10px; margin-top: 15px; text-align: left; }
         .chat-promo p { margin: 0 0 8px 0; font-size: 0.85rem; font-weight: bold; color: #ffcc00; }
         .chat-links { display: flex; gap: 10px; }
@@ -46,12 +45,11 @@
         <button id="join-btn">マッチにドロップイン</button>
         <p class="status" id="status">準備ができたらボタンを押してください。</p>
 
-        <!-- 💬 ここにチャットサイトの宣伝リンクを追加しました -->
         <div class="chat-promo">
             <p>💬 一緒に遊ぶ仲間を募集しよう！どちらでもチャット可能：</p>
             <div class="chat-links">
                 <a href="https://kaminoeee.github.io/chat/" target="_blank">チャットサイト (URL1)</a>
-                <a href="https://proxykoukanjoeeech.vercel.app/" target="_blank">チャットサイト(URL2)</a>
+                <a href="https://proxykoukanjoeeech.vercel.app/" target="_blank">チャットサイト (URL2)</a>
             </div>
         </div>
     </div>
@@ -72,7 +70,7 @@
 </div>
 
 <script>
-    let peer = null, conn = null, myRole = "", gameActive = false;
+    let peer = null, conn = null, myRole = "", gameActive = false, resultShown = false;
     const loginArea = document.getElementById('login-area'), gameArea = document.getElementById('game-area');
     const resultArea = document.getElementById('result-area'), resultTitle = document.getElementById('result-title'), returnBtn = document.getElementById('return-btn');
     const usernameInput = document.getElementById('username-input'), roomIdInput = document.getElementById('room-id-input'), joinBtn = document.getElementById('join-btn'), statusEl = document.getElementById('status');
@@ -83,56 +81,47 @@
     let mouseX = 0, mouseY = 0, isMouseDown = false, shootCooldown = 0;
 
     let walls = [
-        { x: 130, y: 100, width: 20, height: 120 },
-        { x: 400, y: 180, width: 20, height: 120 },
-        { x: 265, y: 150, width: 20, height: 100 }
+        { x: 130, y: 100, width: 25, height: 120 },
+        { x: 400, y: 180, width: 25, height: 120 },
+        { x: 265, y: 150, width: 25, height: 100 }
     ];
     let bushes = [];
     let medKits = [];
 
     let dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
 
-    function seedRandom(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        return function() {
-            let x = Math.sin(hash++) * 10000;
-            return x - Math.floor(x);
-        };
-    }
+    let myHpBarTimer = 0;
+    let peerHpBarTimer = 0;
 
-    function generateRandomMap(roomName) {
-        const rand = seedRandom(roomName);
+    function generateHostMap() {
         bushes = [];
         medKits = [];
-
         for (let i = 0; i < 3; i++) {
             bushes.push({
-                x: Math.floor(rand() * 400) + 50,
-                y: Math.floor(rand() * 260) + 50,
-                width: 80,
-                height: 70
+                x: Math.floor(Math.random() * 380) + 60,
+                y: Math.floor(Math.random() * 240) + 60,
+                width: 85, height: 75
             });
         }
-
         for (let i = 0; i < 5; i++) {
             medKits.push({
                 id: i,
-                x: Math.floor(rand() * 460) + 40,
-                y: Math.floor(rand() * 320) + 40,
-                size: 14,
-                active: true
+                x: Math.floor(Math.random() * 450) + 40,
+                y: Math.floor(Math.random() * 300) + 40,
+                size: 14, active: true
             });
         }
     }
 
     function resetGameState() {
-        myPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0 };
-        peerPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true };
+        myPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0, color: '#00ff00' };
+        peerPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true, color: '#ff3333' };
         peerTarget = { x: -999, y: -999 };
         myBullets = []; peerBullets = [];
         dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
         isMouseDown = false; shootCooldown = 0;
+        myHpBarTimer = 0; peerHpBarTimer = 0;
+        resultShown = false;
     }
     resetGameState();
 
@@ -141,16 +130,23 @@
         const nameValue = usernameInput.value.trim() || "Player";
         if (!roomValue) return;
 
-        generateRandomMap(roomValue);
-
         myPlayer.name = nameValue;
         joinBtn.disabled = true; roomIdInput.disabled = true; usernameInput.disabled = true;
         statusEl.innerText = 'マッチメイキング中...';
 
         myRole = "host";
         peer = new Peer(roomValue);
-        peer.on('open', () => { statusEl.innerText = '他の部隊がドロップシップに搭乗するのを待っています...'; });
-        peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
+        
+        peer.on('open', () => { 
+            statusEl.innerText = '他の部隊がドロップシップに搭乗するのを待っています...'; 
+            generateHostMap(); 
+        });
+        
+        peer.on('connection', (connection) => { 
+            conn = connection; 
+            setupGameConnection(); 
+        });
+        
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
                 myRole = "guest"; peer.destroy(); peer = new Peer();
@@ -165,20 +161,37 @@
 
     function setupGameConnection() {
         if (!conn) return;
+
+        if (myRole === "host") {
+            setTimeout(() => {
+                conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits });
+            }, 500);
+        }
+
         conn.on('data', (data) => {
-            if (data.type === 'state') {
+            if (data.type === 'map_sync') {
+                bushes = data.bushes;
+                medKits = data.medKits;
+            } else if (data.type === 'state') {
                 peerTarget.x = data.x; peerTarget.y = data.y;
                 peerPlayer.hp = data.hp; peerPlayer.name = data.name;
                 peerPlayer.isFlying = data.isFlying;
                 peerPlayer.isVisible = data.isVisible;
                 peerPlayer.isDead = data.isDead;
                 
-                if (data.isDead && !myPlayer.isDead) { endGame(true); }
+                // 💡 【勝敗バグ修正】相手の死亡を検知したら、自分が「勝ち（チャンピオン）」画面を表示する
+                if (peerPlayer.isDead && !resultShown) { endGame(true); }
             } else if (data.type === 'shoot') {
                 peerBullets.push({ x: data.x, y: data.y, vx: Math.cos(data.angle) * 9.5, vy: Math.sin(data.angle) * 9.5, life: 40 });
             } else if (data.type === 'medkit_taken') {
                 let kit = medKits.find(k => k.id === data.id);
                 if (kit) kit.active = false;
+            } else if (data.type === 'hit_happen') {
+                peerHpBarTimer = data.inBush ? 60 : 120;
+            } else if (data.type === 'game_over_signal') {
+                // 💡 【保険の強制勝敗同期】明示的に勝敗通知を受け取った場合の処理
+                if (data.loser === myPlayer.name && !resultShown) { endGame(false); }
+                if (data.winner === myPlayer.name && !resultShown) { endGame(true); }
             }
         });
         conn.on('close', handleDisconnect); conn.on('error', handleDisconnect);
@@ -192,6 +205,7 @@
     }
 
     function endGame(isWin) {
+        resultShown = true;
         resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
         else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
@@ -309,30 +323,46 @@
             conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead });
         }
 
+        if (myHpBarTimer > 0) myHpBarTimer--;
+        if (peerHpBarTimer > 0) peerHpBarTimer--;
+
+        // 🚀 自分の弾と壁の衝突判定
         for (let i = myBullets.length - 1; i >= 0; i--) {
             let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
+            
             let hitWall = false;
             for (let w of walls) {
-                if (b.x > w.x && b.x < w.x + w.width && b.y > w.y && b.y < w.y + w.height) { hitWall = true; break; }
+                if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; }
             }
-            if (hitWall || (!peerPlayer.isDead && !peerPlayer.isFlying && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size)) {
+            if (hitWall) { myBullets.splice(i, 1); continue; }
+
+            if (!peerPlayer.isDead && !peerPlayer.isFlying && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size) {
                 myBullets.splice(i, 1); continue;
             }
             if (b.life <= 0) myBullets.splice(i, 1);
         }
 
+        // 💥 敵の弾の衝突判定
         for (let i = peerBullets.length - 1; i >= 0; i--) {
             let b = peerBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
+            
             let hitWall = false;
             for (let w of walls) {
-                if (b.x > w.x && b.x < w.x + w.width && b.y > w.y && b.y < w.y + w.height) { hitWall = true; break; }
+                if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; }
             }
             if (hitWall) { peerBullets.splice(i, 1); continue; }
-            if (!myPlayer.isDead && !peerPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
+
+            if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
                 myPlayer.hp -= 10; 
+                
+                myHpBarTimer = (!myPlayer.isVisible) ? 60 : 120;
+                conn.send({ type: 'hit_happen', inBush: !myPlayer.isVisible });
+
+                // 💡 【勝敗バグ修正】自分が死んだ瞬間に、即座に相手に勝敗シグナルを送る
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
-                    endGame(false);
+                    conn.send({ type: 'game_over_signal', loser: myPlayer.name, winner: peerPlayer.name });
+                    if (!resultShown) endGame(false);
                 }
                 peerBullets.splice(i, 1); continue;
             }
@@ -359,18 +389,34 @@
             }
         });
 
+        // 🟢 自分プレイヤー
         if (!myPlayer.isFlying) {
             ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
             ctx.fillStyle = myPlayer.isDead ? '#555' : myPlayer.color;
             ctx.beginPath(); ctx.arc(myPlayer.x + myPlayer.size/2, myPlayer.y + myPlayer.size/2, myPlayer.size/2, 0, Math.PI * 2); ctx.fill();
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x - 5, myPlayer.y - 5);
+
+            if (myHpBarTimer > 0 && !myPlayer.isDead) {
+                ctx.fillStyle = '#333'; ctx.fillRect(myPlayer.x - 4, myPlayer.y - 14, 30, 4);
+                ctx.fillStyle = '#00ff00'; ctx.fillRect(myPlayer.x - 4, myPlayer.y - 14, 30 * (myPlayer.hp / 100), 4);
+            }
         }
 
-        if (!peerPlayer.isDead && !peerPlayer.isFlying && peerPlayer.isVisible) {
-            ctx.fillStyle = peerPlayer.color;
-            ctx.beginPath(); ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+        // 🔴 敵プレイヤー
+        if (!peerPlayer.isDead && !peerPlayer.isFlying) {
+            if (peerPlayer.isVisible || peerHpBarTimer > 0) {
+                ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.5;
+                ctx.fillStyle = peerPlayer.color;
+                ctx.beginPath(); ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#fff'; ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+
+                if (peerHpBarTimer > 0) {
+                    ctx.fillStyle = '#333'; ctx.fillRect(peerPlayer.x - 4, peerPlayer.y - 14, 30, 4);
+                    ctx.fillStyle = '#ff3333'; ctx.fillRect(peerPlayer.x - 4, peerPlayer.y - 14, 30 * (peerPlayer.hp / 100), 4);
+                }
+            }
         }
 
         if (dropShip.isActive) {
