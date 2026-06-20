@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D APEX LEGENDS - リマッチ版</title>
+    <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4ac/512.webp" type="image/webp">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; margin: 10px; color: #eee; }
+        .container { max-width: 600px; margin: 0 auto; background: #2a2a2a; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h1 { font-size: 1.4rem; margin: 0 0 10px 0; color: #ff4500; font-weight: bold; letter-spacing: 1px; }
+        .input-group { margin-bottom: 10px; text-align: left; max-width: 80%; margin-left: auto; margin-right: auto; }
+        label { font-size: 0.85rem; font-weight: bold; color: #aaa; display: block; margin-bottom: 3px; }
+        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #444; background: #111; color: #fff; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #ff4500; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
+        button:hover { background: #ff6347; }
+        .status { font-size: 0.85rem; color: #fff; margin: 8px 0; padding: 5px; background: #444; border-radius: 4px; font-weight: bold; }
+        #gameCanvas { background: #111; display: block; margin: 10px auto; border-radius: 4px; border: 2px solid #444; cursor: crosshair; }
+        .instructions { font-size: 0.8rem; color: #aaa; line-height: 1.4; background: #1f1f1f; padding: 10px; border-radius: 4px; }
+        .hud { display: flex; justify-content: space-between; margin: 5px 10px; font-weight: bold; font-size: 0.9rem; }
+        
+        /* 🏆 決着がついたときのリザルト画面 */
+        #result-area { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        #result-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,69,0,0.8); }
+        #return-btn { width: auto; padding: 12px 30px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>2D APEX LEGENDS</h1>
+    
+    <div id="login-area">
+        <div class="input-group">
+            <label for="username-input">ユーザー名（プレイヤー名）:</label>
+            <input type="text" id="username-input" placeholder="例: Wraith_Pro" value="Player">
+        </div>
+        <div class="input-group">
+            <label for="room-id-input">マッチング部屋番号:</label>
+            <input type="text" id="room-id-input" placeholder="例: apex1234">
+        </div>
+        <button id="join-btn">チャンピオンを目指す</button>
+        <p class="status" id="status">名前と部屋番号を決めてドロップインしてください。</p>
+    </div>
+
+    <div id="game-area" style="display: none;">
+        <div class="hud">
+            <div id="my-hp-bar" style="color: #00ff00;">YOUR HP: 100</div>
+            <div style="color: #ffcc00;">部隊数: 2 / 2</div>
+            <div id="peer-hp-bar" style="color: #ff3333;">ENEMY HP: 100</div>
+        </div>
+
+        <canvas id="gameCanvas" width="500" height="350"></canvas>
+
+        <div class="instructions">
+            <strong>【操作方法】</strong> 移動: <strong>矢印キー</strong> または <strong>WASD</strong> / 攻撃: <strong>クリック</strong>
+        </div>
+    </div>
+</div>
+
+<div id="result-area">
+    <div id="result-title">YOU ARE THE CHAMPION</div>
+    <button id="return-btn">ロビーに戻る</button>
+</div>
+
+<script>
+    let peer = null;
+    let conn = null;
+    let myRole = ""; 
+    let gameActive = false; // ゲームループを制御するフラグ
+
+    const loginArea = document.getElementById('login-area');
+    const gameArea = document.getElementById('game-area');
+    const resultArea = document.getElementById('result-area');
+    const resultTitle = document.getElementById('result-title');
+    const returnBtn = document.getElementById('return-btn');
+    
+    const usernameInput = document.getElementById('username-input');
+    const roomIdInput = document.getElementById('room-id-input');
+    const joinBtn = document.getElementById('join-btn');
+    const statusEl = document.getElementById('status');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const myHpEl = document.getElementById('my-hp-bar');
+    const peerHpEl = document.getElementById('peer-hp-bar');
+
+    // 🎮 プレイヤー初期データ
+    let myPlayer, peerPlayer, peerTarget, myBullets, peerBullets;
+    const keys = {};
+    let mouseX = 0, mouseY = 0;
+
+    // ゲーム状態のリセット関数
+    function resetGameState() {
+        myPlayer = { x: 60, y: 175, color: '#00ff00', size: 22, hp: 100, isDead: false, name: "Player" };
+        peerPlayer = { x: 440, y: 175, color: '#ff3333', size: 22, hp: 100, isDead: false, name: "Enemy" };
+        peerTarget = { x: 440, y: 175 };
+        myBullets = [];
+        peerBullets = [];
+    }
+    resetGameState();
+
+    // 💡 名前も一緒に送れるようにバイナリから「文字データ（JSON文字列）」の送信に変更
+    // これにより名前の変更やリセット処理が圧倒的に安定します
+    joinBtn.addEventListener('click', () => {
+        const roomValue = roomIdInput.value.trim();
+        const nameValue = usernameInput.value.trim() || "Player";
+        if (!roomValue) return;
+
+        myPlayer.name = nameValue;
+        joinBtn.disabled = true;
+        roomIdInput.disabled = true;
+        usernameInput.disabled = true;
+        statusEl.innerText = 'マッチメイキング中...';
+
+        myRole = "host";
+        peer = new Peer(roomValue);
+
+        peer.on('open', () => { statusEl.innerText = '敵の参戦を待っています...'; });
+        peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
+
+        peer.on('error', (err) => {
+            if (err.type === 'unavailable-id') {
+                myRole = "guest";
+                peer.destroy(); 
+                peer = new Peer(); 
+                peer.on('open', () => {
+                    statusEl.innerText = 'マッチにドロップインしました！';
+                    conn = peer.connect(roomValue); // 最適化された標準シリアライズを使用
+                    setupGameConnection(); 
+                });
+            }
+        });
+    });
+
+    function setupGameConnection() {
+        if (!conn) return;
+
+        conn.on('data', (data) => {
+            if (data.type === 'state') {
+                peerTarget.x = data.x;
+                peerTarget.y = data.y;
+                peerPlayer.hp = data.hp;
+                peerPlayer.name = data.name;
+                if (data.hp <= 0 && !peerPlayer.isDead) {
+                    peerPlayer.isDead = true;
+                    endGame(true); // 相手のHPが0になったら自分が勝利
+                }
+            } else if (data.type === 'shoot' && !peerPlayer.isDead) {
+                peerBullets.push({
+                    x: data.x, y: data.y,
+                    vx: Math.cos(data.angle) * 7, vy: Math.sin(data.angle) * 7,
+                    life: 60
+                });
+            }
+        });
+
+        conn.on('close', handleDisconnect);
+        conn.on('error', handleDisconnect);
+
+        if (conn.open) startGame(); else conn.on('open', startGame);
+    }
+
+    function startGame() {
+        loginArea.style.display = 'none';
+        gameArea.style.display = 'block';
+        statusEl.innerText = '── 🔴 APEX MATCH START !! 🔴 ──';
+        statusEl.style.background = "#ff4500";
+        gameActive = true;
+        window.requestAnimationFrame(gameLoop);
+    }
+
+    // 🏆 ゲーム終了処理（勝利または敗北）
+    function endGame(isWin) {
+        gameActive = false;
+        setTimeout(() => {
+            resultArea.style.display = 'flex';
+            if (isWin) {
+                resultTitle.innerText = "🏆 YOU ARE THE CHAMPION 🏆";
+                resultTitle.style.color = "#ffcc00";
+            } else {
+                resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️";
+                resultTitle.style.color = "#ff3333";
+            }
+        }, 1000); // 1秒余韻を残してからリザルト画面へ
+    }
+
+    // 🚪 最初の画面（ロビー）に戻る処理
+    returnBtn.addEventListener('click', () => {
+        // 通信を完全に切断してリセット
+        if (conn) conn.close();
+        if (peer) peer.destroy();
+        
+        // 画面の切り替え
+        resultArea.style.display = 'none';
+        gameArea.style.display = 'none';
+        loginArea.style.display = 'block';
+        
+        // 入力欄の復活
+        joinBtn.disabled = false;
+        roomIdInput.disabled = false;
+        usernameInput.disabled = false;
+        statusEl.innerText = 'ロビーに戻りました。新しい名前と部屋番号で再戦できます。';
+        statusEl.style.background = "#444";
+        statusEl.style.color = "#fff";
+        
+        // ゲームデータの初期化
+        resetGameState();
+    });
+
+    function handleDisconnect() {
+        if (gameActive) {
+            alert('対戦相手との接続が切れました。');
+            returnBtn.click();
+        }
+    }
+
+    // 操作系イベント
+    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; keys[e.key] = true; });
+    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (myPlayer.isDead || !conn || !conn.open || !gameActive) return;
+
+        const pX = myPlayer.x + myPlayer.size / 2;
+        const pY = myPlayer.y + myPlayer.size / 2;
+        const angle = Math.atan2(mouseY - pY, mouseX - pX);
+
+        myBullets.push({ x: pX, y: pY, vx: Math.cos(angle) * 7, vy: Math.sin(angle) * 7, life: 60 });
+
+        // 弾発射データを送信
+        conn.send({ type: 'shoot', x: pX, y: pY, angle: angle });
+    });
+
+    // メインループ
+    function gameLoop() {
+        if (!gameActive) return;
+
+        let moved = false;
+        const speed = 3.5;
+
+        if (!myPlayer.isDead) {
+            if ((keys['arrowup'] || keys['w']) && myPlayer.y > 0) { myPlayer.y -= speed; moved = true; }
+            if ((keys['arrowdown'] || keys['s']) && myPlayer.y < canvas.height - myPlayer.size) { myPlayer.y += speed; moved = true; }
+            if ((keys['arrowleft'] || keys['a']) && myPlayer.x > 0) { myPlayer.x -= speed; moved = true; }
+            if ((keys['arrowright'] || keys['d']) && myPlayer.x < canvas.width - myPlayer.size) { myPlayer.x += speed; moved = true; }
+        }
+
+        // 補間処理
+        peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25;
+        peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
+
+        // 定期的な状態送信
+        if (conn && conn.open && !myPlayer.isDead) {
+            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name });
+        }
+
+        // 弾移動＆当たり判定
+        for (let i = myBullets.length - 1; i >= 0; i--) {
+            let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
+            if (!peerPlayer.isDead && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size) {
+                myBullets.splice(i, 1); continue;
+            }
+            if (b.life <= 0) myBullets.splice(i, 1);
+        }
+
+        for (let i = peerBullets.length - 1; i >= 0; i--) {
+            let b = peerBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
+            if (!myPlayer.isDead && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
+                myPlayer.hp -= 15;
+                if (myPlayer.hp <= 0) {
+                    myPlayer.hp = 0;
+                    myPlayer.isDead = true;
+                    endGame(false); // 自分がデスしたら敗北
+                }
+                peerBullets.splice(i, 1); continue;
+            }
+            if (b.life <= 0) peerBullets.splice(i, 1);
+        }
+
+        // HUD更新（入力されたユーザー名を表示）
+        myHpEl.innerText = `${myPlayer.name}: ${myPlayer.hp} ${myPlayer.isDead ? '☠️' : ''}`;
+        peerHpEl.innerText = `${peerPlayer.name}: ${peerPlayer.hp} ${peerPlayer.isDead ? '☠️' : ''}`;
+
+        // 描画
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 自分
+        ctx.fillStyle = myPlayer.isDead ? '#555' : myPlayer.color;
+        ctx.fillRect(myPlayer.x, myPlayer.y, myPlayer.size, myPlayer.size);
+        ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif';
+        ctx.fillText(myPlayer.name, myPlayer.x - 5, myPlayer.y - 5); // 頭の上に名前表示
+
+        // 敵
+        ctx.fillStyle = peerPlayer.isDead ? '#555' : peerPlayer.color;
+        ctx.fillRect(peerPlayer.x, peerPlayer.y, peerPlayer.size, peerPlayer.size);
+        ctx.fillStyle = '#fff';
+        ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+
+        // 弾
+        ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
+        ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
+
+        window.requestAnimationFrame(gameLoop);
+    }
+</script>
+</body>
+</html>
