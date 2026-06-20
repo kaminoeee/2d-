@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
+    <title>2D APEX </title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -69,9 +69,7 @@
     <button id="return-btn">ロビーに戻る</button>
 </div>
 
-<script {
-    // スクリプトブロック内のコメントはすべて削除またはコード化
-}>
+<script>
     let peer = null, conn = null, myRole = "", gameActive = false, resultShown = false;
     const loginArea = document.getElementById('login-area'), gameArea = document.getElementById('game-area');
     const resultArea = document.getElementById('result-area'), resultTitle = document.getElementById('result-title'), returnBtn = document.getElementById('return-btn');
@@ -258,7 +256,8 @@
     function gameLoop() {
         if (!gameActive) return;
 
-        const playerSpeed = 2.4;
+        // 💡 移動速度を2.4から1.7に低下させました
+        const playerSpeed = 1.7;
 
         if (dropShip.isActive) {
             dropShip.x += dropShip.speed;
@@ -372,7 +371,6 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 🌿 草むらの描画（索敵システム適用）
         const myCenterX = myPlayer.x + myPlayer.size / 2;
         const myCenterY = myPlayer.y + myPlayer.size / 2;
 
@@ -381,11 +379,11 @@
             const bCenterY = b.y + b.height / 2;
             const distToBush = Math.hypot(myCenterX - bCenterX, myCenterY - bCenterY);
 
-            // 💡 自分が草むらの中にいて、かつその草むらが近く（半径150px以内）にある場合は半透明にする
-            if (!myPlayer.isVisible && distToBush < 150) {
-                ctx.fillStyle = 'rgba(35, 110, 26, 0.45)'; // 半透明
+            // 💡 索敵範囲を「150」から「90」に縮小しました
+            if (!myPlayer.isVisible && distToBush < 90) {
+                ctx.fillStyle = 'rgba(35, 110, 26, 0.45)'; 
             } else {
-                ctx.fillStyle = 'rgba(19, 64, 14, 0.85)';  // 通常の濃い草むら
+                ctx.fillStyle = 'rgba(19, 64, 14, 0.85)';  
             }
             ctx.fillRect(b.x, b.y, b.width, b.height);
         });
@@ -414,17 +412,15 @@
             }
         }
 
-        // 🔴 敵プレイヤーの描画（索敵ロジック追加）
         if (!peerPlayer.isDead && !peerPlayer.isFlying) {
             const peerCenterX = peerPlayer.x + peerPlayer.size / 2;
             const peerCenterY = peerPlayer.y + peerPlayer.size / 2;
             const distToPeer = Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY);
 
-            // 💡 条件：敵が普通に見えているか、攻撃がヒットしたか、あるいは「自分が草むらにいて、かつ敵が近く（150px以内）にいる」なら見える！
-            let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 150);
+            // 💡 敵を透視できる範囲も「90マス」に縮小しました
+            let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 90);
 
             if (canSeePeer) {
-                // 草むらに潜んでいる敵を透視しているときは、少し半透明にして「見破っている感」を出す
                 ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
                 ctx.fillStyle = peerPlayer.color;
                 ctx.beginPath(); ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2); ctx.fill();
