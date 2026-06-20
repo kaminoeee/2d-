@@ -3,30 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D シューティングゲーム</title>
-    <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4ac/512.webp" type="image/webp">
+    <title>2D APEX</title>
+    
+    <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
+    
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background: #1a1a1a; margin: 10px; color: #eee; }
         .container { max-width: 600px; margin: 0 auto; background: #2a2a2a; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        h1 { font-size: 1.4rem; margin: 0 0 10px 0; color: #ff4500; font-weight: bold; letter-spacing: 1px; }
+        h1 { font-size: 1.4rem; margin: 0 0 10px 0; color: #ffcc00; font-weight: bold; letter-spacing: 1px; }
         .input-group { margin-bottom: 10px; text-align: left; max-width: 80%; margin-left: auto; margin-right: auto; }
         label { font-size: 0.85rem; font-weight: bold; color: #aaa; display: block; margin-bottom: 3px; }
         input[type="text"] { width: 100%; padding: 8px; border: 1px solid #444; background: #111; color: #fff; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #ff4500; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
-        button:hover { background: #ff6347; }
+        button { width: 100%; padding: 10px; background: #ffcc00; color: #111; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
+        button:hover { background: #ffee55; }
         .status { font-size: 0.85rem; color: #fff; margin: 8px 0; padding: 5px; background: #444; border-radius: 4px; font-weight: bold; }
-        #gameCanvas { background: #111; display: block; margin: 10px auto; border-radius: 4px; border: 2px solid #444; cursor: crosshair; }
-        .instructions { font-size: 0.8rem; color: #aaa; line-height: 1.4; background: #1f1f1f; padding: 10px; border-radius: 4px; text-align: left; }
-        .hud { display: flex; justify-content: space-between; margin: 5px 10px; font-weight: bold; font-size: 0.9rem; }
-        #result-area { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
-        #result-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,69,0,0.8); }
-        #return-btn { width: auto; padding: 12px 30px; font-size: 1.1rem; }
+        #gameCanvas { background: #2b4c1f; display: block; margin: 10px auto; border-radius: 4px; border: 2px solid #444; cursor: crosshair; }
+        .hud { display: flex; justify-content: space-between; margin: 5px 10px; font-weight: bold; font-size: 0.9rem; background: #1f1f1f; padding: 8px; border-radius: 4px; }
+        #result-area { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+        #result-title { font-size: 2.5rem; font-weight: bold; margin-bottom: 20px; }
+        #return-btn { width: auto; padding: 12px 30px; font-size: 1.1rem; background: #ffcc00; color: #111; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>2D APEX LEGENDS (魔改造版)</h1>
+    <h1
+        2D APEX〜 </h1>
     
     <div id="login-area">
         <div class="input-group">
@@ -37,24 +39,18 @@
             <label for="room-id-input">マッチング部屋番号:</label>
             <input type="text" id="room-id-input" placeholder="例: apex1234">
         </div>
-        <button id="join-btn">チャンピオンを目指す</button>
-        <p class="status" id="status">名前と部屋番号を決めてドロップインしてください。</p>
+        <button id="join-btn">マッチに入る</button>
+        <p class="status" id="status">準備ができたらボタンを押してください。</p>
     </div>
 
     <div id="game-area" style="display: none;">
         <div class="hud">
             <div id="my-hp-bar" style="color: #00ff00;">YOUR HP: 100</div>
-            <div style="color: #ffcc00;">部隊数: 2 / 2</div>
+            <div id="my-ammo-bar" style="color: #ffcc00;">AMMO: 30/30</div>
             <div id="peer-hp-bar" style="color: #ff3333;">ENEMY HP: 100</div>
         </div>
 
-        <canvas id="gameCanvas" width="500" height="350"></canvas>
-
-        <div class="instructions">
-            <strong>📖 教科書の使い方：</strong><br>
-            コード内の「<code>💡いじってみよう！</code>」と書かれた場所を探して、数字を変えてみよう。<br>
-            ・弾のスピード、飛ぶ距離、ダメージ、見た目などを自由に変更できます！
-        </div>
+        <canvas id="gameCanvas" width="550" height="400"></canvas>
     </div>
 </div>
 
@@ -68,22 +64,28 @@
     const loginArea = document.getElementById('login-area'), gameArea = document.getElementById('game-area');
     const resultArea = document.getElementById('result-area'), resultTitle = document.getElementById('result-title'), returnBtn = document.getElementById('return-btn');
     const usernameInput = document.getElementById('username-input'), roomIdInput = document.getElementById('room-id-input'), joinBtn = document.getElementById('join-btn'), statusEl = document.getElementById('status');
-    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), myHpEl = document.getElementById('my-hp-bar'), peerHpEl = document.getElementById('peer-hp-bar');
+    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), myHpEl = document.getElementById('my-hp-bar'), myAmmoEl = document.getElementById('my-ammo-bar'), peerHpEl = document.getElementById('peer-hp-bar');
 
     let myPlayer, peerPlayer, peerTarget, myBullets, peerBullets;
     const keys = {};
     let mouseX = 0, mouseY = 0;
 
-    // 🏆 【壁のデータ（レベル3）】
-    // 画面中央に配置する遮蔽物の [X座標, Y座標, 横幅, 縦幅]
-    const wall = { x: 240, y: 100, width: 20, height: 150 };
+    // 🗺️ 固定オブジェクトの設定（中央の壁、草むら、回復アイテム）
+    const wall = { x: 265, y: 120, width: 20, height: 160 };
+    const bush = { x: 120, y: 150, width: 70, height: 100 }; // 🟢 草むらエリア
+    const medKit = { x: 260, y: 40, size: 16, active: true }; // ➕ 回復アイテム
+
+    // ✈️ ドロップシップ（飛行機）の初期設定
+    let dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
 
     function resetGameState() {
-        myPlayer = { x: 60, y: 175, color: '#00ff00', size: 22, hp: 100, isDead: false, name: "Player" };
-        peerPlayer = { x: 440, y: 175, color: '#ff3333', size: 22, hp: 100, isDead: false, name: "Enemy" };
-        peerTarget = { x: 440, y: 175 };
-        myBullets = [];
-        peerBullets = [];
+        // 💡 降下前は初期座標を画面外にして、お互いが被らないようにします
+        myPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0 };
+        peerPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true };
+        peerTarget = { x: -999, y: -999 };
+        myBullets = []; peerBullets = [];
+        dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
+        medKit.active = true;
     }
     resetGameState();
 
@@ -98,7 +100,7 @@
 
         myRole = "host";
         peer = new Peer(roomValue);
-        peer.on('open', () => { statusEl.innerText = '敵の参戦を待っています...'; });
+        peer.on('open', () => { statusEl.innerText = '他の部隊がドロップシップに搭乗するのを待っています...'; });
         peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
@@ -116,18 +118,16 @@
         if (!conn) return;
         conn.on('data', (data) => {
             if (data.type === 'state') {
-                peerTarget.x = data.x; peerTarget.y = data.y; peerPlayer.hp = data.hp; peerPlayer.name = data.name;
+                peerTarget.x = data.x; peerTarget.y = data.y;
+                peerPlayer.hp = data.hp; peerPlayer.name = data.name;
+                peerPlayer.isFlying = data.isFlying;
+                peerPlayer.isVisible = data.isVisible;
                 if (data.hp <= 0 && !peerPlayer.isDead) { peerPlayer.isDead = true; endGame(true); }
             } else if (data.type === 'shoot' && !peerPlayer.isDead) {
-                // 💡【レベル1：敵の武器の弾速】
-                // 敵の弾のスピード。自分の弾速（下のクリック処理部分）と数字を合わせよう！
-                const peerBulletSpeed = 7; 
-                peerBullets.push({
-                    x: data.x, y: data.y,
-                    vx: Math.cos(data.angle) * peerBulletSpeed,
-                    vy: Math.sin(data.angle) * peerBulletSpeed,
-                    life: data.life
-                });
+                // サブマシンガン（SMG）の敵の弾速
+                peerBullets.push({ x: data.x, y: data.y, vx: Math.cos(data.angle) * 8.5, vy: Math.sin(data.angle) * 8.5, life: 45 });
+            } else if (data.type === 'medkit_taken') {
+                medKit.active = false; // 相手が回復を取ったら消す同期
             }
         });
         conn.on('close', handleDisconnect); conn.on('error', handleDisconnect);
@@ -136,7 +136,6 @@
 
     function startGame() {
         loginArea.style.display = 'none'; gameArea.style.display = 'block';
-        statusEl.innerText = '── 🔴 APEX MATCH START !! 🔴 ──';
         gameActive = true;
         window.requestAnimationFrame(gameLoop);
     }
@@ -145,7 +144,7 @@
         gameActive = false;
         setTimeout(() => {
             resultArea.style.display = 'flex';
-            if (isWin) { resultTitle.innerText = "🏆 YOU ARE THE CHAMPION 🏆"; resultTitle.style.color = "#ffcc00"; }
+            if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
             else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
         }, 1000);
     }
@@ -160,131 +159,200 @@
 
     function handleDisconnect() { if (gameActive) { alert('対戦相手との接続が切れました。'); returnBtn.click(); } }
 
-    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; keys[e.key] = true; });
+    window.addEventListener('keydown', (e) => { 
+        keys[e.key.toLowerCase()] = true; keys[e.key] = true; 
+        // 💡 【リロード機能】Rキーが押されたらリロード開始
+        if (e.key.toLowerCase() === 'r' && !myPlayer.isReloading && myPlayer.ammo < myPlayer.maxAmmo && !myPlayer.isFlying) {
+            myPlayer.isReloading = true;
+            myPlayer.reloadTimer = 75; // リロードにかかる時間（約1.2秒）
+        }
+    });
     window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
+    
     canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
         mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
     });
 
-    // 🖱️ 【クリックで弾を発射する処理（レベル1）】
+    // 🖱️ 【クリックで弾を発射する（サブマシンガン仕様）】
     canvas.addEventListener('mousedown', (e) => {
-        if (myPlayer.isDead || !conn || !conn.open || !gameActive) return;
+        if (myPlayer.isDead || !conn || !conn.open || !gameActive || myPlayer.isReloading || myPlayer.isFlying) return;
+
+        // 💡 弾切れの時は撃てない
+        if (myPlayer.ammo <= 0) {
+            myPlayer.isReloading = true;
+            myPlayer.reloadTimer = 75; // 自動リロード
+            return;
+        }
 
         const pX = myPlayer.x + myPlayer.size / 2;
         const pY = myPlayer.y + myPlayer.size / 2;
         const angle = Math.atan2(mouseY - pY, mouseX - pX);
 
-        // 💡【レベル1：自分の弾カスタマイズ】
-        // 以下の数字を書き換えて武器を作ろう！
-        const myBulletSpeed = 7;  // 👈 弾のスピード（例: 20にすると超高速スナイパー）
-        const myBulletLife = 60;  // 👈 弾の射程距離（フレーム数。大きいほど遠くまで届く）
+        // サブマシンガン（SMG）カスタマイズ：少し弾速を速くし、射程を短く設定
+        myBullets.push({ x: pX, y: pY, vx: Math.cos(angle) * 8.5, vy: Math.sin(angle) * 8.5, life: 45 });
+        myPlayer.ammo--; // 弾を1発消費
 
-        myBullets.push({ 
-            x: pX, y: pY, 
-            vx: Math.cos(angle) * myBulletSpeed, 
-            vy: Math.sin(angle) * myBulletSpeed, 
-            life: myBulletLife 
-        });
-
-        // 相手に弾のデータを送る（射程距離情報も一緒に送る）
-        conn.send({ type: 'shoot', x: pX, y: pY, angle: angle, life: myBulletLife });
+        conn.send({ type: 'shoot', x: pX, y: pY, angle: angle });
     });
 
     function gameLoop() {
         if (!gameActive) return;
 
-        // 💡【キャラクターの移動速度】
-        // この数字を大きくすると、プレイヤーの移動速度が上がります（オクタン化！）
-        const playerSpeed = 3.5;
+        // 💡 【足のスピード調整】少し足を遅くして戦術的に動けるように変更（3.5 ➡️ 2.4）
+        const playerSpeed = 2.4;
 
-        if (!myPlayer.isDead) {
+        // ✈️ 1. ドロップシップの巡航と降下システム
+        if (dropShip.isActive) {
+            dropShip.x += dropShip.speed;
+            if (dropShip.x > canvas.width + 50) {
+                dropShip.isActive = false;
+                // 最後まで降りなかったら強制ドロップ
+                if (myPlayer.isFlying) { myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; }
+            }
+            // SpaceキーかEキーで飛行機から飛び降りる（着陸）
+            if (myPlayer.isFlying && (keys[' '] || keys['e'])) {
+                myPlayer.x = dropShip.x;
+                myPlayer.y = dropShip.y;
+                myPlayer.isFlying = false;
+            }
+        }
+
+        // 🏃 2. プレイヤーの移動計算
+        if (!myPlayer.isDead && !myPlayer.isFlying) {
             if ((keys['arrowup'] || keys['w']) && myPlayer.y > 0) { myPlayer.y -= playerSpeed; }
             if ((keys['arrowdown'] || keys['s']) && myPlayer.y < canvas.height - myPlayer.size) { myPlayer.y += playerSpeed; }
             if ((keys['arrowleft'] || keys['a']) && myPlayer.x > 0) { myPlayer.x -= playerSpeed; }
             if ((keys['arrowright'] || keys['d']) && myPlayer.x < canvas.width - myPlayer.size) { myPlayer.x += playerSpeed; }
         }
 
-        peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25;
-        peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
-
-        if (conn && conn.open && !myPlayer.isDead) {
-            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name });
+        // 🔄 3. リロードタイマーのカウント
+        if (myPlayer.isReloading) {
+            myPlayer.reloadTimer--;
+            if (myPlayer.reloadTimer <= 0) {
+                myPlayer.ammo = myPlayer.maxAmmo;
+                myPlayer.isReloading = false;
+            }
         }
 
-        // 🚀 自分の弾の計算
+        // 🌿 4. 草むら（ステルス）の判定（ブロスタ風）
+        // 自分が草むらの中に完全に隠れているかどうかをチェック
+        if (!myPlayer.isFlying && myPlayer.x > bush.x && myPlayer.x + myPlayer.size < bush.x + bush.width &&
+            myPlayer.y > bush.y && myPlayer.y + myPlayer.size < bush.y + bush.height) {
+            myPlayer.isVisible = false; // 隠れる！
+        } else {
+            myPlayer.isVisible = true;  // 丸見え！
+        }
+
+        // 🍿 5. 線形補間（Lerp）による敵の滑らかな位置同期
+        if (!peerPlayer.isFlying) {
+            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25;
+            peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
+        } else {
+            peerPlayer.x = -999; peerPlayer.y = -999; // 飛行中は画面から消す
+        }
+
+        // ➕ 6. 回復アイテム（シールドセル）の取得判定
+        if (medKit.active && !myPlayer.isDead && !myPlayer.isFlying) {
+            const pCenterX = myPlayer.x + myPlayer.size/2;
+            const pCenterY = myPlayer.y + myPlayer.size/2;
+            const dist = Math.hypot(pCenterX - medKit.x, pCenterY - medKit.y);
+            if (dist < myPlayer.size/2 + medKit.size/2) {
+                myPlayer.hp = Math.min(myPlayer.hp + 40, 100); // HPを40回復（最大100）
+                medKit.active = false;
+                conn.send({ type: 'medkit_taken' }); // 相手の画面からも消させる
+            }
+        }
+
+        // 📡 7. データ送信
+        if (conn && conn.open && !myPlayer.isDead) {
+            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible });
+        }
+
+        // 🚀 8. 弾丸と壁の当たり判定
         for (let i = myBullets.length - 1; i >= 0; i--) {
             let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            
-            // 💡【レベル3：弾が中央の壁に当たったら消える判定】
-            if (b.x > wall.x && b.x < wall.x + wall.width && b.y > wall.y && b.y < wall.y + wall.height) {
-                myBullets.splice(i, 1); continue;
-            }
-            if (!peerPlayer.isDead && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size) {
+            if (b.x > wall.x && b.x < wall.x + wall.width && b.y > wall.y && b.y < wall.y + wall.height) { myBullets.splice(i, 1); continue; }
+            if (!peerPlayer.isDead && !peerPlayer.isFlying && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size) {
                 myBullets.splice(i, 1); continue;
             }
             if (b.life <= 0) myBullets.splice(i, 1);
         }
 
-        // 💥 敵の弾の計算
         for (let i = peerBullets.length - 1; i >= 0; i--) {
             let b = peerBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            
-            // 💡【レベル3：敵の弾も壁で消える判定】
-            if (b.x > wall.x && b.x < wall.x + wall.width && b.y > wall.y && b.y < wall.y + wall.height) {
-                peerBullets.splice(i, 1); continue;
-            }
-            if (!myPlayer.isDead && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                
-                // 💡【レベル1：被弾ダメージ量】
-                // 弾が当たったときのダメージ（今は15）。ここを45にするとヘビィアモ武器になります
-                myPlayer.hp -= 15;
-                
+            if (b.x > wall.x && b.x < wall.x + wall.width && b.y > wall.y && b.y < wall.y + wall.height) { peerBullets.splice(i, 1); continue; }
+            if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
+                myPlayer.hp -= 12; // SMGの1発当たりのダメージ
                 if (myPlayer.hp <= 0) { myPlayer.hp = 0; myPlayer.isDead = true; endGame(false); }
                 peerBullets.splice(i, 1); continue;
             }
             if (b.life <= 0) peerBullets.splice(i, 1);
         }
 
-        myHpEl.innerText = `${myPlayer.name}: ${myPlayer.hp} ${myPlayer.isDead ? '☠️' : ''}`;
-        peerHpEl.innerText = `${peerPlayer.name}: ${peerPlayer.hp} ${peerPlayer.isDead ? '☠️' : ''}`;
+        // 🎛️ 9. HUD表示の更新
+        myHpEl.innerText = `YOUR HP: ${myPlayer.hp} ${myPlayer.isDead ? '☠️' : ''}`;
+        myAmmoEl.innerText = myPlayer.isReloading ? `🔄 RELOADING...` : `AMMO: ${myPlayer.ammo}/${myPlayer.maxAmmo} [Rキーでリロード]`;
+        peerHpEl.innerText = `${peerPlayer.name} HP: ${peerPlayer.hp} ${peerPlayer.isDead ? '☠️' : ''}`;
 
-        // 🎨 画面の描写開始
+        // 🎨 10. 全体の描画処理
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 🧱 【遮蔽物の描写（レベル3）】
-        ctx.fillStyle = '#555'; // 壁の色（グレー）
+        // 🌿 【草むらの描画】
+        ctx.fillStyle = 'rgba(19, 64, 14, 0.85)';
+        ctx.fillRect(bush.x, bush.y, bush.width, bush.height);
+
+        // 🧱 【中央の壁の描画】
+        ctx.fillStyle = '#666';
         ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
 
-        // 🟢 【自分キャラクターの描写（レベル2）】
-        ctx.fillStyle = myPlayer.isDead ? '#555' : myPlayer.color;
-        
-        // 💡【レベル2：四角から丸へ魔改造するスイッチ】
-        // 下の「//」を消すと、キャラクターが四角から「丸型（ブロスタ風）」に進化します！
-        ctx.fillRect(myPlayer.x, myPlayer.y, myPlayer.size, myPlayer.size); // 四角を描く命令
-        /* ctx.beginPath();
-        ctx.arc(myPlayer.x + myPlayer.size/2, myPlayer.y + myPlayer.size/2, myPlayer.size/2, 0, Math.PI * 2);
-        ctx.fill();
-        */
+        // ➕ 【回復アイテム（メディキット）の描画】
+        if (medKit.active) {
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(medKit.x - medKit.size/2, medKit.y - medKit.size/2, medKit.size, medKit.size);
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(medKit.x - 2, medKit.y - medKit.size/2 + 2, 4, medKit.size - 4);
+            ctx.fillRect(medKit.x - medKit.size/2 + 2, medKit.y - 2, medKit.size - 4, 4);
+        }
 
-        ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif';
-        ctx.fillText(myPlayer.name, myPlayer.x - 5, myPlayer.y - 5);
+        // 🟢 【自分プレイヤーの描画（丸型・ブロスタ風）】
+        if (!myPlayer.isFlying) {
+            // 草むらの中にいるときは少し透明にする
+            ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
+            ctx.fillStyle = myPlayer.isDead ? '#555' : myPlayer.color;
+            ctx.beginPath();
+            ctx.arc(myPlayer.x + myPlayer.size/2, myPlayer.y + myPlayer.size/2, myPlayer.size/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
 
-        // 🔴 【敵キャラクターの描写（レベル2）】
-        ctx.fillStyle = peerPlayer.isDead ? '#555' : peerPlayer.color;
-        
-        // 💡敵の見た目スイッチ（ここも下の「//」を消すと丸になります）
-        ctx.fillRect(peerPlayer.x, peerPlayer.y, peerPlayer.size, peerPlayer.size);
-        /*
-        ctx.beginPath();
-        ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2);
-        ctx.fill();
-        */
+            ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif';
+            ctx.fillText(myPlayer.name, myPlayer.x - 5, myPlayer.y - 5);
+        }
 
-        ctx.fillStyle = '#fff';
-        ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+        // 🔴 【敵プレイヤーの描画】
+        // 敵が「生存している」かつ「飛行中でない」かつ「草むらに隠れていない」ときだけ描画
+        if (!peerPlayer.isDead && !peerPlayer.isFlying && peerPlayer.isVisible) {
+            ctx.fillStyle = peerPlayer.color;
+            ctx.beginPath();
+            ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2);
+            ctx.fill();
 
-        // ☄️ 弾の描写
+            ctx.fillStyle = '#fff';
+            ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+        }
+
+        // ✈️ 【ドロップシップ（飛行機）の描画】
+        if (dropShip.isActive) {
+            ctx.fillStyle = '#888';
+            ctx.fillRect(dropShip.x - 25, dropShip.y - 10, 50, 20); // 飛行機本体
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillRect(dropShip.x - 5, dropShip.y - 15, 10, 5);  // コックピット
+            
+            if (myPlayer.isFlying) {
+                ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif';
+                ctx.fillText('🚀 SPACEまたはEキーで降下！', dropShip.x - 60, dropShip.y + 30);
+            }
+        }
+
+        // ☄️ 弾の描画
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
