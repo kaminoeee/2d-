@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX </title>
+    <title>2D APEX</title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -253,10 +253,20 @@
         shootCooldown = 6; 
     }
 
+    // 🧱 プレイヤー用の衝突判定関数
+    function checkWallCollision(nextX, nextY, size) {
+        for (let w of walls) {
+            if (nextX + size > w.x && nextX < w.x + w.width &&
+                nextY + size > w.y && nextY < w.y + w.height) {
+                return true; // 壁にめり込んでいる
+            }
+        }
+        return false;
+    }
+
     function gameLoop() {
         if (!gameActive) return;
 
-        // 💡 移動速度を2.4から1.7に低下させました
         const playerSpeed = 1.7;
 
         if (dropShip.isActive) {
@@ -270,11 +280,34 @@
             }
         }
 
+        // 💡 【バグ修正】壁との当たり判定を行い、めり込まない時だけ移動を許可
         if (!myPlayer.isDead && !myPlayer.isFlying) {
-            if ((keys['arrowup'] || keys['w']) && myPlayer.y > 0) { myPlayer.y -= playerSpeed; }
-            if ((keys['arrowdown'] || keys['s']) && myPlayer.y < canvas.height - myPlayer.size) { myPlayer.y += playerSpeed; }
-            if ((keys['arrowleft'] || keys['a']) && myPlayer.x > 0) { myPlayer.x -= playerSpeed; }
-            if ((keys['arrowright'] || keys['d']) && myPlayer.x < canvas.width - myPlayer.size) { myPlayer.x += playerSpeed; }
+            let nextX = myPlayer.x;
+            let nextY = myPlayer.y;
+
+            if (keys['arrowup'] || keys['w']) { 
+                if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) {
+                    nextY -= playerSpeed;
+                }
+            }
+            if (keys['arrowdown'] || keys['s']) { 
+                if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) {
+                    nextY += playerSpeed;
+                }
+            }
+            if (keys['arrowleft'] || keys['a']) { 
+                if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) {
+                    nextX -= playerSpeed;
+                }
+            }
+            if (keys['arrowright'] || keys['d']) { 
+                if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) {
+                    nextX += playerSpeed;
+                }
+            }
+
+            myPlayer.x = nextX;
+            myPlayer.y = nextY;
         }
 
         if (shootCooldown > 0) shootCooldown--;
@@ -379,7 +412,6 @@
             const bCenterY = b.y + b.height / 2;
             const distToBush = Math.hypot(myCenterX - bCenterX, myCenterY - bCenterY);
 
-            // 💡 索敵範囲を「150」から「90」に縮小しました
             if (!myPlayer.isVisible && distToBush < 90) {
                 ctx.fillStyle = 'rgba(35, 110, 26, 0.45)'; 
             } else {
@@ -417,7 +449,6 @@
             const peerCenterY = peerPlayer.y + peerPlayer.size / 2;
             const distToPeer = Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY);
 
-            // 💡 敵を透視できる範囲も「90マス」に縮小しました
             let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 90);
 
             if (canSeePeer) {
