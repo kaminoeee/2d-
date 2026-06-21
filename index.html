@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
+    <title>2D APEX </title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -90,40 +90,23 @@
     let peerHpBarTimer = 0;
 
     function generateHostMap() {
-        bushes = [];
-        medKits = [];
-        walls = [];
-
+        bushes = []; medKits = []; walls = [];
         const wallCount = Math.floor(Math.random() * 2) + 3; 
         for (let i = 0; i < wallCount; i++) {
             walls.push({
-                x: Math.floor(Math.random() * 350) + 80,
-                y: Math.floor(Math.random() * 200) + 60,
-                width: Math.random() > 0.5 ? 25 : 80,
-                height: Math.random() > 0.5 ? 100 : 25
+                x: Math.floor(Math.random() * 350) + 80, y: Math.floor(Math.random() * 200) + 60,
+                width: Math.random() > 0.5 ? 25 : 80, height: Math.random() > 0.5 ? 100 : 25
             });
         }
-
         for (let i = 0; i < 3; i++) {
-            bushes.push({
-                x: Math.floor(Math.random() * 380) + 60,
-                y: Math.floor(Math.random() * 240) + 60,
-                width: 85, height: 75
-            });
+            bushes.push({ x: Math.floor(Math.random() * 380) + 60, y: Math.floor(Math.random() * 240) + 60, width: 85, height: 75 });
         }
-
         for (let i = 0; i < 5; i++) {
-            medKits.push({
-                id: i,
-                x: Math.floor(Math.random() * 450) + 40,
-                y: Math.floor(Math.random() * 300) + 40,
-                size: 14, active: true
-            });
+            medKits.push({ id: i, x: Math.floor(Math.random() * 450) + 40, y: Math.floor(Math.random() * 300) + 40, size: 14, active: true });
         }
     }
 
     function resetGameState() {
-        // キャラクターサイズを絵文字に合わせて26に微調整
         myPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0, angle: 0 };
         peerPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true, angle: 0 };
         peerTarget = { x: -999, y: -999 };
@@ -131,8 +114,7 @@
         dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
         isMouseDown = false; shootCooldown = 0;
         myHpBarTimer = 0; peerHpBarTimer = 0;
-        resultShown = false;
-        walls = []; bushes = []; medKits = [];
+        resultShown = false; walls = []; bushes = []; medKits = [];
     }
     resetGameState();
 
@@ -152,12 +134,7 @@
             statusEl.innerText = '他の部隊がドロップシップに搭乗するのを待っています...'; 
             generateHostMap(); 
         });
-        
-        peer.on('connection', (connection) => { 
-            conn = connection; 
-            setupGameConnection(); 
-        });
-        
+        peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
                 myRole = "guest"; peer.destroy(); peer = new Peer();
@@ -174,32 +151,28 @@
         if (!conn) return;
 
         if (myRole === "host") {
-            setTimeout(() => {
-                conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls });
-            }, 500);
+            setTimeout(() => { conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls }); }, 500);
         }
 
         conn.on('data', (data) => {
             if (data.type === 'map_sync') {
-                bushes = data.bushes;
-                medKits = data.medKits;
-                walls = data.walls; 
+                bushes = data.bushes; medKits = data.medKits; walls = data.walls; 
             } else if (data.type === 'state') {
                 peerTarget.x = data.x; peerTarget.y = data.y;
+                
+                if (data.hp < peerPlayer.hp) {
+                    peerHpBarTimer = data.isVisible ? 120 : 60;
+                }
+                
                 peerPlayer.hp = data.hp; peerPlayer.name = data.name;
-                peerPlayer.isFlying = data.isFlying;
-                peerPlayer.isVisible = data.isVisible;
-                peerPlayer.isDead = data.isDead;
-                peerPlayer.angle = data.angle; // 敵の銃の向きを同期
+                peerPlayer.isFlying = data.isFlying; peerPlayer.isVisible = data.isVisible;
+                peerPlayer.isDead = data.isDead; peerPlayer.angle = data.angle;
                 
                 if (peerPlayer.isDead && !resultShown) { endGame(true); }
             } else if (data.type === 'shoot') {
                 peerBullets.push({ x: data.x, y: data.y, vx: Math.cos(data.angle) * 9.5, vy: Math.sin(data.angle) * 9.5, life: 40 });
             } else if (data.type === 'medkit_taken') {
-                let kit = medKits.find(k => k.id === data.id);
-                if (kit) kit.active = false;
-            } else if (data.type === 'hit_happen') {
-                peerHpBarTimer = data.inBush ? 60 : 120;
+                let kit = medKits.find(k => k.id === data.id); if (kit) kit.active = false;
             } else if (data.type === 'game_over_signal') {
                 if (data.loserRole === myRole && !resultShown) { endGame(false); }
                 if (data.winnerRole === myRole && !resultShown) { endGame(true); }
@@ -211,25 +184,20 @@
 
     function startGame() {
         loginArea.style.display = 'none'; gameArea.style.display = 'block';
-        gameActive = true;
-        window.requestAnimationFrame(gameLoop);
+        gameActive = true; window.requestAnimationFrame(gameLoop);
     }
 
     function endGame(isWin) {
-        gameActive = false; 
-        resultShown = true;
-        resultArea.style.display = 'flex';
+        gameActive = false; resultShown = true; resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
         else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
     }
 
     returnBtn.addEventListener('click', () => {
-        gameActive = false;
-        if (conn) conn.close(); if (peer) peer.destroy();
+        gameActive = false; if (conn) conn.close(); if (peer) peer.destroy();
         resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block';
         joinBtn.disabled = false; roomIdInput.disabled = false; usernameInput.disabled = false;
-        statusEl.innerText = 'ロビーに戻りました。';
-        resetGameState();
+        statusEl.innerText = 'ロビーに戻りました。'; resetGameState();
     });
 
     function handleDisconnect() { if (gameActive) { alert('対戦相手との接続が切れました。'); returnBtn.click(); } }
@@ -237,17 +205,13 @@
     window.addEventListener('keydown', (e) => { 
         keys[e.key.toLowerCase()] = true; keys[e.key] = true; 
         if (e.key.toLowerCase() === 'r' && !myPlayer.isReloading && myPlayer.ammo < myPlayer.maxAmmo && !myPlayer.isFlying && !myPlayer.isDead) {
-            myPlayer.isReloading = true;
-            myPlayer.reloadTimer = 75; 
+            myPlayer.isReloading = true; myPlayer.reloadTimer = 75; 
         }
     });
     window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
-    
     canvas.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
+        const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
     });
-
     canvas.addEventListener('mousedown', (e) => { isMouseDown = true; });
     window.addEventListener('mouseup', (e) => { isMouseDown = false; });
 
@@ -257,11 +221,9 @@
 
         const pCenterX = myPlayer.x + myPlayer.size / 2;
         const pCenterY = myPlayer.y + myPlayer.size / 2;
-
         const spread = (Math.random() - 0.5) * 0.08;
         const finalAngle = myPlayer.angle + spread;
 
-        // 銃口の先端付近から弾が出るように調整
         const spawnX = pCenterX + Math.cos(finalAngle) * 20;
         const spawnY = pCenterY + Math.sin(finalAngle) * 20;
 
@@ -274,75 +236,40 @@
 
     function checkWallCollision(nextX, nextY, size) {
         for (let w of walls) {
-            if (nextX + size > w.x && nextX < w.x + w.width &&
-                nextY + size > w.y && nextY < w.y + w.height) {
-                return true; 
-            }
+            if (nextX + size > w.x && nextX < w.x + w.width && nextY + size > w.y && nextY < w.y + w.height) return true; 
         }
         return false;
     }
 
     function resolveWallStack() {
         let attempts = 0;
-        while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) {
-            myPlayer.y += 4;
-            attempts++;
-        }
-        if (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size)) {
-            myPlayer.x = 20;
-            myPlayer.y = 20;
-        }
+        while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) { myPlayer.y += 4; attempts++; }
+        if (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size)) { myPlayer.x = 20; myPlayer.y = 20; }
     }
 
     function gameLoop() {
         if (!gameActive) return;
-
         const playerSpeed = 1.7;
 
         if (dropShip.isActive) {
             dropShip.x += dropShip.speed;
             if (dropShip.x > canvas.width + 50) {
                 dropShip.isActive = false;
-                if (myPlayer.isFlying) { 
-                    myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; 
-                    resolveWallStack(); 
-                }
+                if (myPlayer.isFlying) { myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); }
             }
             if (myPlayer.isFlying && (keys[' '] || keys['e'])) {
-                myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false;
-                resolveWallStack(); 
+                myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); 
             }
         }
 
         if (!myPlayer.isDead && !myPlayer.isFlying) {
-            let nextX = myPlayer.x;
-            let nextY = myPlayer.y;
+            let nextX = myPlayer.x; let nextY = myPlayer.y;
+            if (keys['arrowup'] || keys['w']) { if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) nextY -= playerSpeed; }
+            if (keys['arrowdown'] || keys['s']) { if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) nextY += playerSpeed; }
+            if (keys['arrowleft'] || keys['a']) { if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) nextX -= playerSpeed; }
+            if (keys['arrowright'] || keys['d']) { if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) nextX += playerSpeed; }
+            myPlayer.x = nextX; myPlayer.y = nextY;
 
-            if (keys['arrowup'] || keys['w']) { 
-                if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) {
-                    nextY -= playerSpeed;
-                }
-            }
-            if (keys['arrowdown'] || keys['s']) { 
-                if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) {
-                    nextY += playerSpeed;
-                }
-            }
-            if (keys['arrowleft'] || keys['a']) { 
-                if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) {
-                    nextX -= playerSpeed;
-                }
-            }
-            if (keys['arrowright'] || keys['d']) { 
-                if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) {
-                    nextX += playerSpeed;
-                }
-            }
-
-            myPlayer.x = nextX;
-            myPlayer.y = nextY;
-
-            // 【新機能】打つ方向（マウスの方向）へ自動で向くアングル計算
             const pCenterX = myPlayer.x + myPlayer.size / 2;
             const pCenterY = myPlayer.y + myPlayer.size / 2;
             myPlayer.angle = Math.atan2(mouseY - pCenterY, mouseX - pCenterX);
@@ -359,30 +286,24 @@
         let inBush = false;
         if (!myPlayer.isFlying && !myPlayer.isDead) {
             for (let b of bushes) {
-                if (myPlayer.x > b.x && myPlayer.x + myPlayer.size < b.x + b.width &&
-                    myPlayer.y > b.y && myPlayer.y + myPlayer.size < b.y + b.height) {
-                    inBush = true; break;
-                }
+                if (myPlayer.x > b.x && myPlayer.x + myPlayer.size < b.x + b.width && myPlayer.y > b.y && myPlayer.y + myPlayer.size < b.y + b.height) { inBush = true; break; }
             }
         }
         myPlayer.isVisible = !inBush;
 
         if (!peerPlayer.isFlying) {
-            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25;
-            peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
+            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25; peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
         } else {
             peerPlayer.x = -999; peerPlayer.y = -999;
         }
 
         if (!myPlayer.isDead && !myPlayer.isFlying) {
-            const pCenterX = myPlayer.x + myPlayer.size/2;
-            const pCenterY = myPlayer.y + myPlayer.size/2;
+            const pCenterX = myPlayer.x + myPlayer.size/2; const pCenterY = myPlayer.y + myPlayer.size/2;
             for (let kit of medKits) {
                 if (kit.active) {
                     const dist = Math.hypot(pCenterX - kit.x, pCenterY - kit.y);
                     if (dist < myPlayer.size/2 + kit.size/2) {
-                        myPlayer.hp = Math.min(myPlayer.hp + 30, 100); 
-                        kit.active = false;
+                        myPlayer.hp = Math.min(myPlayer.hp + 30, 100); kit.active = false;
                         conn.send({ type: 'medkit_taken', id: kit.id });
                     }
                 }
@@ -390,7 +311,6 @@
         }
 
         if (conn && conn.open) {
-            // angle情報もパケットに入れて相手に送る
             conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead, angle: myPlayer.angle });
         }
 
@@ -399,17 +319,11 @@
 
         for (let i = myBullets.length - 1; i >= 0; i--) {
             let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            
             let hitWall = false;
             for (let w of walls) {
                 if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; }
             }
-            if (hitWall) { myBullets.splice(i, 1); continue; }
-
-            if (!peerPlayer.isDead && !peerPlayer.isFlying && b.x > peerPlayer.x && b.x < peerPlayer.x + peerPlayer.size && b.y > peerPlayer.y && b.y < peerPlayer.y + peerPlayer.size) {
-                myBullets.splice(i, 1); continue;
-            }
-            if (b.life <= 0) myBullets.splice(i, 1);
+            if (hitWall || b.life <= 0) { myBullets.splice(i, 1); }
         }
 
         for (let i = peerBullets.length - 1; i >= 0; i--) {
@@ -422,11 +336,9 @@
             if (hitWall) { peerBullets.splice(i, 1); continue; }
 
             if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                myPlayer.hp -= 10; 
+                myPlayer.hp -= 3; // 👈 10から3にダメージを減少させました！
+                myHpBarTimer = 120;
                 
-                myHpBarTimer = (!myPlayer.isVisible) ? 60 : 120;
-                conn.send({ type: 'hit_happen', inBush: !myPlayer.isVisible });
-
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
                     const peerRole = (myRole === "host") ? "guest" : "host";
@@ -443,101 +355,57 @@
         peerHpEl.innerText = `${peerPlayer.name} HP: ${peerPlayer.hp} ${peerPlayer.isDead ? '☠️' : ''}`;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         const myCenterX = myPlayer.x + myPlayer.size / 2;
         const myCenterY = myPlayer.y + myPlayer.size / 2;
 
         bushes.forEach(b => {
-            const bCenterX = b.x + b.width / 2;
-            const bCenterY = b.y + b.height / 2;
+            const bCenterX = b.x + b.width / 2; const bCenterY = b.y + b.height / 2;
             const distToBush = Math.hypot(myCenterX - bCenterX, myCenterY - bCenterY);
-
-            if (!myPlayer.isVisible && distToBush < 90) {
-                ctx.fillStyle = 'rgba(35, 110, 26, 0.45)'; 
-            } else {
-                ctx.fillStyle = 'rgba(19, 64, 14, 0.85)';  
-            }
+            ctx.fillStyle = (!myPlayer.isVisible && distToBush < 90) ? 'rgba(35, 110, 26, 0.45)' : 'rgba(19, 64, 14, 0.85)';  
             ctx.fillRect(b.x, b.y, b.width, b.height);
         });
 
-        ctx.fillStyle = '#666';
-        walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
-
+        ctx.fillStyle = '#666'; walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
         medKits.forEach(kit => {
             if (kit.active) {
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(kit.x - kit.size/2, kit.y - kit.size/2, kit.size, kit.size);
-                ctx.fillStyle = '#ff0000'; ctx.fillRect(kit.x - 2, kit.y - kit.size/2 + 2, 4, kit.size - 4);
-                ctx.fillRect(kit.x - kit.size/2 + 2, kit.y - 2, kit.size - 4, 4);
+                ctx.fillStyle = '#ff0000'; ctx.fillRect(kit.x - 2, kit.y - kit.size/2 + 2, 4, kit.size - 4); ctx.fillRect(kit.x - kit.size/2 + 2, kit.y - 2, kit.size - 4, 4);
             }
         });
 
-        // 🟢 自分プレイヤーの描画
         if (!myPlayer.isFlying) {
-            ctx.save();
-            ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
-            
-            // 🔫 サブマシンガン（武器）を回転させて描画
+            ctx.save(); ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
             if (!myPlayer.isDead) {
-                ctx.save();
-                ctx.translate(myCenterX, myCenterY);
-                ctx.rotate(myPlayer.angle);
-                ctx.fillStyle = '#555555'; // サブマシンガンの色（グレー）
-                ctx.fillRect(5, -3, 18, 6); // 銃身
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(10, 2, 3, 6);  // マガジン（弾倉）風の突起
-                ctx.restore();
+                ctx.save(); ctx.translate(myCenterX, myCenterY); ctx.rotate(myPlayer.angle);
+                ctx.fillStyle = '#555555'; ctx.fillRect(5, -3, 18, 6);
+                ctx.fillStyle = '#222222'; ctx.fillRect(10, 2, 3, 6); ctx.restore();
             }
-
-            // キャラクター見た目の描画
-            ctx.font = '22px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            if (myPlayer.isDead) {
-                ctx.fillText('☠️', myCenterX, myCenterY); // デスボックス化
-            } else {
-                ctx.fillText('🟢', myCenterX, myCenterY); // ロボットシールド風
-            }
-            ctx.restore();
+            ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(myPlayer.isDead ? '☠️' : '🟢', myCenterX, myCenterY); ctx.restore();
 
             ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x + myPlayer.size/2, myPlayer.y - 8);
-
             if (myHpBarTimer > 0 && !myPlayer.isDead) {
                 ctx.fillStyle = '#333'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30, 4);
                 ctx.fillStyle = '#00ff00'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30 * (myPlayer.hp / 100), 4);
             }
         }
 
-        // 🔴 敵プレイヤーの描画
         if (!peerPlayer.isDead && !peerPlayer.isFlying) {
             const peerCenterX = peerPlayer.x + peerPlayer.size / 2;
             const peerCenterY = peerPlayer.y + peerPlayer.size / 2;
             const distToPeer = Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY);
-
             let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 90);
 
             if (canSeePeer) {
-                ctx.save();
-                ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
-                
-                // 敵のサブマシンガンの回転
-                ctx.save();
-                ctx.translate(peerCenterX, peerCenterY);
-                ctx.rotate(peerPlayer.angle);
-                ctx.fillStyle = '#555555';
-                ctx.fillRect(5, -3, 18, 6);
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(10, 2, 3, 6);
-                ctx.restore();
+                ctx.save(); ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
+                ctx.save(); ctx.translate(peerCenterX, peerCenterY); ctx.rotate(peerPlayer.angle);
+                ctx.fillStyle = '#555555'; ctx.fillRect(5, -3, 18, 6);
+                ctx.fillStyle = '#222222'; ctx.fillRect(10, 2, 3, 6); ctx.restore();
 
-                // 敵の見た目
-                ctx.font = '22px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('🔴', peerCenterX, peerCenterY);
-                ctx.restore();
+                ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🔴', peerCenterX, peerCenterY); ctx.restore();
 
                 ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(peerPlayer.name, peerPlayer.x + peerPlayer.size/2, peerPlayer.y - 8);
-
                 if (peerHpBarTimer > 0) {
                     ctx.fillStyle = '#333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30, 4);
                     ctx.fillStyle = '#ff3333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30 * (peerPlayer.hp / 100), 4);
@@ -555,16 +423,10 @@
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
         if (!myPlayer.isFlying) {
-            ctx.save();
-            ctx.globalCompositeOperation = 'destination-in';
+            ctx.save(); ctx.globalCompositeOperation = 'destination-in';
             let grad = ctx.createRadialGradient(myCenterX, myCenterY, 80, myCenterX, myCenterY, 200);
-            grad.addColorStop(0, 'rgba(0, 0, 0, 1.0)');
-            grad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(myCenterX, myCenterY, 200, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+            grad.addColorStop(0, 'rgba(0, 0, 0, 1.0)'); grad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(myCenterX, myCenterY, 200, 0, Math.PI * 2); ctx.fill(); ctx.restore();
         }
 
         window.requestAnimationFrame(gameLoop);
