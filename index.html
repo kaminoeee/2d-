@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX (Lobby Overhaul)</title>
+    <title>2D APEX (HUD Fix Edition)</title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -51,6 +51,8 @@
             border: 1px solid rgba(255, 204, 0, 0.2);
             box-shadow: 0 0 25px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,204,0,0.05); 
             backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
         }
 
         /* タイトルロゴ風 */
@@ -161,21 +163,62 @@
             border-color: #ffcc00; 
         }
 
-        /* --- ゲーム画面用のスタイル --- */
-        #gameCanvas { background: #2b4c1f; display: block; margin: 15px auto; border-radius: 6px; border: 3px solid #222; cursor: crosshair; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-        .hud { display: flex; justify-content: space-between; margin: 5px 0; font-weight: bold; font-size: 0.9rem; background: #111420; padding: 12px; border-radius: 6px; border: 1px solid #222; }
-        #result-area { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,6,10,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
+        /* --- 修正：ゲーム画面・HUD用のスタイル --- */
+        #game-area {
+            position: relative;
+            z-index: 10; /* ロビー背景より手前に配置 */
+        }
+        .hud { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 10px; 
+            font-weight: bold; 
+            font-size: 1rem; 
+            background: #111420; 
+            padding: 12px; 
+            border-radius: 6px; 
+            border: 1px solid #2c354a;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .hud div {
+            padding: 2px 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        #gameCanvas { 
+            background: #2b4c1f; 
+            display: block; 
+            margin: 0 auto; 
+            border-radius: 6px; 
+            border: 3px solid #222; 
+            cursor: crosshair; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
+        }
+        #result-area { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(5,6,10,0.95); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column; 
+            backdrop-filter: blur(5px); 
+        }
         #result-title { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: 2px; font-style: italic; }
         #return-btn { width: auto; padding: 14px 40px; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
+<!-- 背景エフェクト -->
 <div class="bg-animation" id="bg-effect"></div>
 
 <div class="container">
-    <h1>2D APEX</h1>
+    <div id="lobby-title-wrap">
+        <h1>2D APEX</h1>
+    </div>
     
+    <!-- ロビー画面 -->
     <div id="login-area">
         <div class="input-group">
             <label for="username-input">OPERATOR NAME / ユーザー名:</label>
@@ -186,7 +229,7 @@
             <input type="text" id="room-id-input" placeholder="例: apex1234">
         </div>
         <button id="join-btn">READY TO DROP / マッチにドロップイン</button>
-        <p class="status" id="status">SYSTEM SYSTEM SYSTEM: 準備完了。部隊を編成してください。</p>
+        <p class="status" id="status">SYSTEM : 準備完了。部隊を編成してください。</p>
 
         <div class="chat-promo">
             <p>💬 一緒に遊ぶ仲間を募集しよう！どちらでもチャット可能：</p>
@@ -197,6 +240,7 @@
         </div>
     </div>
 
+    <!-- ゲーム画面 -->
     <div id="game-area" style="display: none;">
         <div class="hud">
             <div id="my-hp-bar" style="color: #00ff00;">YOUR HP: 100</div>
@@ -215,6 +259,7 @@
 <script>
     let peer = null, conn = null, myRole = "", gameActive = false, resultShown = false;
     const loginArea = document.getElementById('login-area'), gameArea = document.getElementById('game-area'), bgEffect = document.getElementById('bg-effect');
+    const lobbyTitleWrap = document.getElementById('lobby-title-wrap');
     const resultArea = document.getElementById('result-area'), resultTitle = document.getElementById('result-title'), returnBtn = document.getElementById('return-btn');
     const usernameInput = document.getElementById('username-input'), roomIdInput = document.getElementById('room-id-input'), joinBtn = document.getElementById('join-btn'), statusEl = document.getElementById('status');
     const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), myHpEl = document.getElementById('my-hp-bar'), myAmmoEl = document.getElementById('my-ammo-bar'), peerHpEl = document.getElementById('peer-hp-bar');
@@ -321,9 +366,12 @@
     }
 
     function startGame() {
-        loginArea.style.display = 'none'; bgEffect.style.display = 'none'; gameArea.style.display = 'block';
-        // キャンバスの配置に合わせてコンテナ幅を調整
+        loginArea.style.display = 'none'; lobbyTitleWrap.style.display = 'none'; bgEffect.style.display = 'none'; 
+        gameArea.style.display = 'block';
         document.querySelector('.container').style.maxWidth = '600px';
+        document.querySelector('.container').style.background = 'transparent';
+        document.querySelector('.container').style.border = 'none';
+        document.querySelector('.container').style.boxShadow = 'none';
         gameActive = true; window.requestAnimationFrame(gameLoop);
     }
 
@@ -335,8 +383,15 @@
 
     returnBtn.addEventListener('click', () => {
         gameActive = false; if (conn) conn.close(); if (peer) peer.destroy();
-        resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block'; bgEffect.style.display = 'block';
-        document.querySelector('.container').style.maxWidth = '550px';
+        resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block'; lobbyTitleWrap.style.display = 'block'; bgEffect.style.display = 'block';
+        
+        // コンテナの見た目をロビー用に元に戻す
+        const container = document.querySelector('.container');
+        container.style.maxWidth = '550px';
+        container.style.background = 'rgba(20, 24, 37, 0.85)';
+        container.style.border = '1px solid rgba(255, 204, 0, 0.2)';
+        container.style.boxShadow = '0 0 25px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,204,0,0.05)';
+        
         joinBtn.disabled = false; roomIdInput.disabled = false; usernameInput.disabled = false;
         statusEl.innerText = 'SYSTEM: ロビーに帰還しました。再度編成可能です。'; resetGameState();
     });
@@ -476,7 +531,7 @@
             if (hitWall) { peerBullets.splice(i, 1); continue; }
 
             if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                myPlayer.hp -= 3; // 1発3ダメージ計算
+                myPlayer.hp -= 3; // 1発3ダメージ
                 myHpBarTimer = 120;
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
