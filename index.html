@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
+    <title>2D APEX </title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        /* 全体ベース設定 */
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             text-align: center; 
@@ -17,8 +16,6 @@
             color: #eee; 
             overflow-x: hidden;
         }
-
-        /* 動くサイバー背景（ロビー用） */
         .bg-animation {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -40,8 +37,6 @@
             0% { background-position: 0 0; }
             100% { background-position: 0 800px; }
         }
-
-        /* メインコンテナ */
         .container { 
             max-width: 550px; 
             margin: 40px auto; 
@@ -54,8 +49,6 @@
             position: relative;
             z-index: 1;
         }
-
-        /* タイトルロゴ風 */
         h1 { 
             font-size: 2.2rem; 
             margin: 0 0 25px 0; 
@@ -66,8 +59,6 @@
             text-shadow: 0 0 10px rgba(255,204,0,0.5), 2px 2px 0px #ff3333;
             font-style: italic;
         }
-
-        /* 入力エリア */
         .input-group { margin-bottom: 18px; text-align: left; }
         label { 
             font-size: 0.75rem; 
@@ -95,8 +86,6 @@
             box-shadow: 0 0 10px rgba(255,204,0,0.25), inset 0 2px 4px rgba(0,0,0,0.5);
             outline: none;
         }
-
-        /* 出撃ボタン */
         button { 
             width: 100%; 
             padding: 14px; 
@@ -119,8 +108,6 @@
             background: linear-gradient(135deg, #ffcc00 0%, #ffee55 100%);
         }
         button:active { transform: translateY(1px); }
-
-        /* ステータス */
         .status { 
             font-size: 0.85rem; 
             color: #99aab5; 
@@ -132,8 +119,6 @@
             font-weight: bold; 
             text-align: left;
         }
-
-        /* 🎁 開発者応援セクション */
         .support-section {
             background: rgba(230, 81, 0, 0.1); 
             border: 1px solid rgba(230, 81, 0, 0.3); 
@@ -141,123 +126,36 @@
             border-radius: 8px; 
             margin-top: 25px;
             text-align: left;
-            box-shadow: inset 0 0 10px rgba(230, 81, 0, 0.05);
         }
-        .support-title {
-            margin: 0 0 8px 0; 
-            font-size: 0.85rem; 
-            color: #ff9900; 
-            font-weight: bold;
-            letter-spacing: 0.5px;
-        }
-        .support-desc {
-            margin: 0 0 12px 0; 
-            font-size: 0.8rem; 
-            color: #cbd5e1; 
-            line-height: 1.5;
-        }
+        .support-title { margin: 0 0 8px 0; font-size: 0.85rem; color: #ff9900; font-weight: bold; }
+        .support-desc { margin: 0 0 12px 0; font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; }
         #target-email {
-            color: #ffcc00; 
-            background: rgba(0, 0, 0, 0.3); 
-            padding: 3px 6px; 
-            border: 1px solid rgba(255,204,0,0.3); 
-            border-radius: 4px; 
-            cursor: pointer;
-            font-family: monospace;
-            font-size: 0.85rem;
-            display: inline-block;
-            margin-top: 2px;
-            transition: all 0.2s ease;
+            color: #ffcc00; background: rgba(0, 0, 0, 0.3); padding: 3px 6px; border: 1px solid rgba(255,204,0,0.3); 
+            border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.85rem; display: inline-block;
         }
-        #target-email:hover {
-            background: rgba(255,204,0,0.1);
-            border-color: #ffcc00;
-        }
-        #amajif-btn {
-            background: linear-gradient(135deg, #e65100 0%, #ff9900 100%);
-            color: white;
-            margin-top: 0;
-            padding: 10px;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 10px rgba(230, 81, 0, 0.3);
-        }
-        #amajif-btn:hover {
-            background: linear-gradient(135deg, #ff9900 0%, #ffb300 100%);
-            box-shadow: 0 6px 14px rgba(255,153,0,0.5);
-        }
-
-        /* チャット募集欄 */
+        #amajif-btn { background: linear-gradient(135deg, #e65100 0%, #ff9900 100%); color: white; margin-top: 0; padding: 10px; font-size: 0.85rem; }
         .chat-promo { 
-            background: rgba(14, 17, 27, 0.7); 
-            border: 1px solid rgba(255,204,0,0.15); 
-            border-radius: 8px; 
-            padding: 15px; 
-            margin-top: 15px; 
-            text-align: left; 
+            background: rgba(14, 17, 27, 0.7); border: 1px solid rgba(255,204,0,0.15); border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; 
         }
-        .chat-promo p { margin: 0 0 12px 0; font-size: 0.85rem; font-weight: bold; color: #ffcc00; letter-spacing: 0.5px; }
+        .chat-promo p { margin: 0 0 12px 0; font-size: 0.85rem; font-weight: bold; color: #ffcc00; }
         .chat-links { display: flex; gap: 10px; }
         .chat-links a { 
-            flex: 1; 
-            text-align: center; 
-            background: #1a2030; 
-            color: #cbd5e1; 
-            padding: 10px; 
-            border-radius: 6px; 
-            font-size: 0.8rem; 
-            text-decoration: none; 
-            font-weight: bold; 
-            border: 1px solid #2d3748;
-            transition: all 0.2s ease;
+            flex: 1; text-align: center; background: #1a2030; color: #cbd5e1; padding: 10px; border-radius: 6px; font-size: 0.8rem; 
+            text-decoration: none; font-weight: bold; border: 1px solid #2d3748;
         }
-        .chat-links a:hover { 
-            background: #2d3748; 
-            color: #fff;
-            border-color: #ffcc00; 
-        }
-
-        /* --- ゲーム画面・HUD用のスタイル --- */
-        #game-area {
-            position: relative;
-            z-index: 10;
-        }
+        #game-area { position: relative; z-index: 10; }
         .hud { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 10px; 
-            font-weight: bold; 
-            font-size: 1rem; 
-            background: #111420; 
-            padding: 12px; 
-            border-radius: 6px; 
-            border: 1px solid #2c354a;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        .hud div {
-            padding: 2px 5px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 1rem; 
+            background: #111420; padding: 12px; border-radius: 6px; border: 1px solid #2c354a;
         }
         #gameCanvas { 
-            background: #2b4c1f; 
-            display: block; 
-            margin: 0 auto; 
-            border-radius: 6px; 
-            border: 3px solid #222; 
-            cursor: crosshair; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
+            background: #2b4c1f; display: block; margin: 0 auto; border-radius: 6px; border: 3px solid #222; cursor: crosshair; 
         }
         #result-area { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(5,6,10,0.95); 
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column; 
-            backdrop-filter: blur(5px); 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,6,10,0.95); 
+            z-index: 1000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); 
         }
-        #result-title { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; letter-spacing: 2px; font-style: italic; }
+        #result-title { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; font-style: italic; }
         #return-btn { width: auto; padding: 14px 40px; font-size: 1.1rem; }
     </style>
 </head>
@@ -266,36 +164,34 @@
 <div class="bg-animation" id="bg-effect"></div>
 
 <div class="container">
-    <div id="lobby-title-wrap">
-        <h1>2D APEX</h1>
-    </div>
+    <div id="lobby-title-wrap"><h1>2D APEX</h1></div>
     
     <div id="login-area">
         <div class="input-group">
-            <label for="username-input">OPERATOR NAME / ユーザー名:</label>
-            <input type="text" id="username-input" placeholder="例: Wraith_Pro" value="Player">
+            <label for="username-input">OPERATOR NAME:</label>
+            <input type="text" id="username-input" value="Player">
         </div>
         <div class="input-group">
-            <label for="room-id-input">MATCH ROOM ID / 部屋番号:</label>
+            <label for="room-id-input">MATCH ROOM ID:</label>
             <input type="text" id="room-id-input" placeholder="例: apex1234">
         </div>
-        <button id="join-btn">READY TO DROP / マッチにドロップイン</button>
+        <button id="join-btn">READY TO DROP</button>
         <p class="status" id="status">SYSTEM : 準備完了。部隊を編成してください。</p>
 
         <div class="support-section">
-            <p class="support-title">🎁 SUPPLY DROP / 開発者を応援する（匿名送付可能）</p>
+            <p class="support-title">🎁 SUPPLY DROP / 開発者を応援する</p>
             <p class="support-desc">
-                サイトを気に入ったら、Amazonギフトカード（15円〜）でジュースをおごっていただけると励みになります！<br>
-                宛先メールアドレス：<strong id="target-email" title="クリックでコピー">kaminoeee@gmail.com</strong>
+                Amazonギフトカード（15円〜）でジュースをおごっていただけると励みになります！<br>
+                宛先：<strong id="target-email" title="クリックでコピー">kaminoeee@gmail.com</strong>
             </p>
             <button id="amajif-btn">アドレスをコピーしてAmazonを開く ↗</button>
         </div>
 
         <div class="chat-promo">
-            <p>💬 一緒に遊ぶ仲間を募集しよう！どちらでもチャット可能：</p>
+            <p>💬 一緒に遊ぶ仲間を募集しよう：</p>
             <div class="chat-links">
-                <a href="https://kaminoeee.github.io/chat/" target="_blank">チャットサイト (URL1)</a>
-                <a href="https://proxykoukanjoeeech.vercel.app/" target="_blank">チャットサイト (URL2)</a>
+                <a href="https://kaminoeee.github.io/chat/" target="_blank">チャットURL1</a>
+                <a href="https://proxykoukanjoeeech.vercel.app/" target="_blank">チャットURL2</a>
             </div>
         </div>
     </div>
@@ -326,42 +222,28 @@
     let myPlayer, peerPlayer, peerTarget, myBullets, peerBullets;
     const keys = {};
     let mouseX = 0, mouseY = 0, isMouseDown = false, shootCooldown = 0;
-
-    let walls = [];
-    let bushes = [];
-    let medKits = [];
-
+    let walls = [], bushes = [], medKits = [];
     let dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
+    let myHpBarTimer = 0, peerHpBarTimer = 0;
 
-    let myHpBarTimer = 0;
-    let peerHpBarTimer = 0;
+    // 軽量化のための通信制御用変数
+    let lastSentState = { x: 0, y: 0, angle: 0, hp: 100, isFlying: true, isVisible: true, isDead: false };
+    let syncThrottleCounter = 0;
 
-    // --- Amazonギフトカード送付用のスクリプト処理 ---
+    // Amazon用
     const targetEmail = document.getElementById('target-email');
     const amajifBtn = document.getElementById('amajif-btn');
-
-    function copyEmailAndOpenAmazon() {
-        const emailText = targetEmail.innerText;
-        navigator.clipboard.writeText(emailText).then(() => {
-            alert('宛先メールアドレス「' + emailText + '」をクリップボードにコピーしました！\nAmazonのページを開きます。');
-            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
-        }).catch(err => {
-            // クリップボードAPIが失敗した場合のフォールバック
-            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
-        });
-    }
-
-    targetEmail.addEventListener('click', () => {
+    targetEmail.addEventListener('click', () => { navigator.clipboard.writeText(targetEmail.innerText); alert('コピーしました！'); });
+    amajifBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(targetEmail.innerText).then(() => {
-            alert('宛先メールアドレスをコピーしました！');
+            alert('宛先アドレスをコピーしました！Amazonを開きます。');
+            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
         });
     });
-    amajifBtn.addEventListener('click', copyEmailAndOpenAmazon);
-    // ------------------------------------------------
 
     function generateHostMap() {
         bushes = []; medKits = []; walls = [];
-        const wallCount = Math.floor(Math.random() * 2) + 3; 
+        const wallCount = 4; 
         for (let i = 0; i < wallCount; i++) {
             walls.push({
                 x: Math.floor(Math.random() * 350) + 80, y: Math.floor(Math.random() * 200) + 60,
@@ -371,7 +253,7 @@
         for (let i = 0; i < 3; i++) {
             bushes.push({ x: Math.floor(Math.random() * 380) + 60, y: Math.floor(Math.random() * 240) + 60, width: 85, height: 75 });
         }
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 4; i++) {
             medKits.push({ id: i, x: Math.floor(Math.random() * 450) + 40, y: Math.floor(Math.random() * 300) + 40, size: 14, active: true });
         }
     }
@@ -382,9 +264,9 @@
         peerTarget = { x: -999, y: -999 };
         myBullets = []; peerBullets = [];
         dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
-        isMouseDown = false; shootCooldown = 0;
-        myHpBarTimer = 0; peerHpBarTimer = 0;
+        isMouseDown = false; shootCooldown = 0; myHpBarTimer = 0; peerHpBarTimer = 0;
         resultShown = false; walls = []; bushes = []; medKits = [];
+        syncThrottleCounter = 0;
     }
     resetGameState();
 
@@ -395,39 +277,28 @@
 
         myPlayer.name = nameValue;
         joinBtn.disabled = true; roomIdInput.disabled = true; usernameInput.disabled = true;
-        statusEl.innerText = 'CONNECTING: マッチメイキングサーバーへ接続中...';
+        statusEl.innerText = 'CONNECTING...';
 
         myRole = "host";
         peer = new Peer(roomValue);
         
-        peer.on('open', () => { 
-            statusEl.innerText = 'WAITING: 他の部隊がドロップシップに搭乗するのを待っています...'; 
-            generateHostMap(); 
-        });
+        peer.on('open', () => { statusEl.innerText = 'WAITING FOR ENEMY...'; generateHostMap(); });
         peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
         peer.on('error', (err) => {
             if (err.type === 'unavailable-id') {
                 myRole = "guest"; peer.destroy(); peer = new Peer();
-                peer.on('open', () => {
-                    statusEl.innerText = 'SUCCESS: マッチへのエントリーに成功。ドロップインします。';
-                    conn = peer.connect(roomValue);
-                    setupGameConnection();
-                });
+                peer.on('open', () => { conn = peer.connect(roomValue); setupGameConnection(); });
             }
         });
     });
 
     function setupGameConnection() {
         if (!conn) return;
-
-        if (myRole === "host") {
-            setTimeout(() => { conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls }); }, 500);
-        }
+        if (myRole === "host") { setTimeout(() => { conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls }); }, 300); }
 
         conn.on('data', (data) => {
-            if (data.type === 'map_sync') {
-                bushes = data.bushes; medKits = data.medKits; walls = data.walls; 
-            } else if (data.type === 'state') {
+            if (data.type === 'map_sync') { bushes = data.bushes; medKits = data.medKits; walls = data.walls; }
+            else if (data.type === 'state') {
                 peerTarget.x = data.x; peerTarget.y = data.y;
                 if (data.hp < peerPlayer.hp) { peerHpBarTimer = data.isVisible ? 120 : 60; }
                 peerPlayer.hp = data.hp; peerPlayer.name = data.name;
@@ -448,33 +319,26 @@
     }
 
     function startGame() {
-        loginArea.style.display = 'none'; lobbyTitleWrap.style.display = 'none'; bgEffect.style.display = 'none'; 
-        gameArea.style.display = 'block';
-        document.querySelector('.container').style.maxWidth = '600px';
-        document.querySelector('.container').style.background = 'transparent';
-        document.querySelector('.container').style.border = 'none';
-        document.querySelector('.container').style.boxShadow = 'none';
+        loginArea.style.display = 'none'; lobbyTitleWrap.style.display = 'none'; bgEffect.style.display = 'none'; gameArea.style.display = 'block';
+        const container = document.querySelector('.container');
+        container.style.maxWidth = '600px'; container.style.background = 'transparent'; container.style.border = 'none'; container.style.boxShadow = 'none';
         gameActive = true; window.requestAnimationFrame(gameLoop);
     }
 
     function endGame(isWin) {
         gameActive = false; resultShown = true; resultArea.style.display = 'flex';
-        if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; resultTitle.style.textShadow = "0 0 15px rgba(255,204,0,0.6)"; }
-        else { resultTitle.innerText = "☠️ 部隊全滅 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; resultTitle.style.textShadow = "0 0 15px rgba(255,51,51,0.6)"; }
+        if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
+        else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
     }
 
     returnBtn.addEventListener('click', () => {
         gameActive = false; if (conn) conn.close(); if (peer) peer.destroy();
         resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block'; lobbyTitleWrap.style.display = 'block'; bgEffect.style.display = 'block';
-        
         const container = document.querySelector('.container');
-        container.style.maxWidth = '550px';
-        container.style.background = 'rgba(20, 24, 37, 0.85)';
-        container.style.border = '1px solid rgba(255, 204, 0, 0.2)';
-        container.style.boxShadow = '0 0 25px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,204,0,0.05)';
-        
+        container.style.maxWidth = '550px'; container.style.background = 'rgba(20, 24, 37, 0.85)';
+        container.style.border = '1px solid rgba(255, 204, 0, 0.2)'; container.style.boxShadow = '0 0 25px rgba(0,0,0,0.6)';
         joinBtn.disabled = false; roomIdInput.disabled = false; usernameInput.disabled = false;
-        statusEl.innerText = 'SYSTEM: ロビーに帰還しました。再度編成可能です。'; resetGameState();
+        statusEl.innerText = 'SYSTEM: ロビーに帰還しました。'; resetGameState();
     });
 
     function handleDisconnect() { if (gameActive) { alert('対戦相手との接続が切れました。'); returnBtn.click(); } }
@@ -486,23 +350,17 @@
         }
     });
     window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
-    canvas.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
-    });
-    canvas.addEventListener('mousedown', (e) => { isMouseDown = true; });
-    window.addEventListener('mouseup', (e) => { isMouseDown = false; });
+    canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top; });
+    canvas.addEventListener('mousedown', () => { isMouseDown = true; });
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
 
     function fireSMG() {
         if (myPlayer.isDead || !conn || !conn.open || !gameActive || myPlayer.isReloading || myPlayer.isFlying) return;
         if (myPlayer.ammo <= 0) { myPlayer.isReloading = true; myPlayer.reloadTimer = 75; return; }
 
-        const pCenterX = myPlayer.x + myPlayer.size / 2;
-        const pCenterY = myPlayer.y + myPlayer.size / 2;
-        const spread = (Math.random() - 0.5) * 0.08;
-        const finalAngle = myPlayer.angle + spread;
-
-        const spawnX = pCenterX + Math.cos(finalAngle) * 20;
-        const spawnY = pCenterY + Math.sin(finalAngle) * 20;
+        const pCenterX = myPlayer.x + myPlayer.size / 2, pCenterY = myPlayer.y + myPlayer.size / 2;
+        const spread = (Math.random() - 0.5) * 0.08, finalAngle = myPlayer.angle + spread;
+        const spawnX = pCenterX + Math.cos(finalAngle) * 20, spawnY = pCenterY + Math.sin(finalAngle) * 20;
 
         myBullets.push({ x: spawnX, y: spawnY, vx: Math.cos(finalAngle) * 9.5, vy: Math.sin(finalAngle) * 9.5, life: 40 });
         myPlayer.ammo--; 
@@ -512,16 +370,13 @@
     }
 
     function checkWallCollision(nextX, nextY, size) {
-        for (let w of walls) {
-            if (nextX + size > w.x && nextX < w.x + w.width && nextY + size > w.y && nextY < w.y + w.height) return true; 
-        }
+        for (let w of walls) { if (nextX + size > w.x && nextX < w.x + w.width && nextY + size > w.y && nextY < w.y + w.height) return true; }
         return false;
     }
 
     function resolveWallStack() {
         let attempts = 0;
         while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) { myPlayer.y += 4; attempts++; }
-        if (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size)) { myPlayer.x = 20; myPlayer.y = 20; }
     }
 
     function gameLoop() {
@@ -534,22 +389,17 @@
                 dropShip.isActive = false;
                 if (myPlayer.isFlying) { myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); }
             }
-            if (myPlayer.isFlying && (keys[' '] || keys['e'])) {
-                myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); 
-            }
+            if (myPlayer.isFlying && (keys[' '] || keys['e'])) { myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); }
         }
 
         if (!myPlayer.isDead && !myPlayer.isFlying) {
             let nextX = myPlayer.x; let nextY = myPlayer.y;
-            if (keys['arrowup'] || keys['w']) { if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) nextY -= playerSpeed; }
-            if (keys['arrowdown'] || keys['s']) { if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) nextY += playerSpeed; }
-            if (keys['arrowleft'] || keys['a']) { if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) nextX -= playerSpeed; }
-            if (keys['arrowright'] || keys['d']) { if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) nextX += playerSpeed; }
+            if (keys['w']) { if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) nextY -= playerSpeed; }
+            if (keys['s']) { if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) nextY += playerSpeed; }
+            if (keys['a']) { if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) nextX -= playerSpeed; }
+            if (keys['d']) { if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) nextX += playerSpeed; }
             myPlayer.x = nextX; myPlayer.y = nextY;
-
-            const pCenterX = myPlayer.x + myPlayer.size / 2;
-            const pCenterY = myPlayer.y + myPlayer.size / 2;
-            myPlayer.angle = Math.atan2(mouseY - pCenterY, mouseX - pCenterX);
+            myPlayer.angle = Math.atan2(mouseY - (myPlayer.y + myPlayer.size / 2), mouseX - (myPlayer.x + myPlayer.size / 2));
         }
 
         if (shootCooldown > 0) shootCooldown--;
@@ -568,140 +418,128 @@
         }
         myPlayer.isVisible = !inBush;
 
+        // 相手プレイヤーの滑らかな位置予測移動（補間率を最適化）
         if (!peerPlayer.isFlying) {
-            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.25; peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.25;
+            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.35; 
+            peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.35;
         } else {
             peerPlayer.x = -999; peerPlayer.y = -999;
         }
 
         if (!myPlayer.isDead && !myPlayer.isFlying) {
-            const pCenterX = myPlayer.x + myPlayer.size/2; const pCenterY = myPlayer.y + myPlayer.size/2;
+            const pCenterX = myPlayer.x + myPlayer.size/2, pCenterY = myPlayer.y + myPlayer.size/2;
             for (let kit of medKits) {
-                if (kit.active) {
-                    const dist = Math.hypot(pCenterX - kit.x, pCenterY - kit.y);
-                    if (dist < myPlayer.size/2 + kit.size/2) {
-                        myPlayer.hp = Math.min(myPlayer.hp + 30, 100); kit.active = false;
-                        conn.send({ type: 'medkit_taken', id: kit.id });
-                    }
+                if (kit.active && Math.hypot(pCenterX - kit.x, pCenterY - kit.y) < myPlayer.size/2 + kit.size/2) {
+                    myPlayer.hp = Math.min(myPlayer.hp + 30, 100); kit.active = false;
+                    conn.send({ type: 'medkit_taken', id: kit.id });
                 }
             }
         }
 
-        if (conn && conn.open) {
-            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead, angle: myPlayer.angle });
+        // ⚡ 極限最適化：通信頻度のスロットリング（1秒間に約30回に間引く ＆ 変化がない時は送らない）
+        syncThrottleCounter++;
+        if (conn && conn.open && syncThrottleCounter % 2 === 0) {
+            const hasChanged = Math.abs(lastSentState.x - myPlayer.x) > 0.5 || 
+                               Math.abs(lastSentState.y - myPlayer.y) > 0.5 || 
+                               Math.abs(lastSentState.angle - myPlayer.angle) > 0.05 || 
+                               lastSentState.hp !== myPlayer.hp || 
+                               lastSentState.isDead !== myPlayer.isDead ||
+                               lastSentState.isVisible !== myPlayer.isVisible ||
+                               lastSentState.isFlying !== myPlayer.isFlying;
+
+            if (hasChanged) {
+                conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead, angle: myPlayer.angle });
+                lastSentState = { x: myPlayer.x, y: myPlayer.y, angle: myPlayer.angle, hp: myPlayer.hp, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead };
+            }
         }
 
         if (myHpBarTimer > 0) myHpBarTimer--;
         if (peerHpBarTimer > 0) peerHpBarTimer--;
 
+        // 弾移動処理
         for (let i = myBullets.length - 1; i >= 0; i--) {
             let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            let hitWall = false;
-            for (let w of walls) {
-                if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; }
-            }
+            let hitWall = false; for (let w of walls) { if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; } }
             if (hitWall || b.life <= 0) { myBullets.splice(i, 1); }
         }
-
         for (let i = peerBullets.length - 1; i >= 0; i--) {
             let b = peerBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            let hitWall = false;
-            for (let w of walls) {
-                if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; }
-            }
+            let hitWall = false; for (let w of walls) { if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; } }
             if (hitWall) { peerBullets.splice(i, 1); continue; }
-
             if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                myPlayer.hp -= 3; 
-                myHpBarTimer = 120;
+                myPlayer.hp -= 3; myHpBarTimer = 120;
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
-                    const peerRole = (myRole === "host") ? "guest" : "host";
-                    conn.send({ type: 'game_over_signal', loserRole: myRole, winnerRole: peerRole });
-                    if (!resultShown) endGame(false);
+                    conn.send({ type: 'game_over_signal', loserRole: myRole, winnerRole: (myRole === "host" ? "guest" : "host") });
+                    endGame(false);
                 }
                 peerBullets.splice(i, 1); continue;
             }
             if (b.life <= 0) peerBullets.splice(i, 1);
         }
 
-        myHpEl.innerText = `YOUR HP: ${myPlayer.hp} ${myPlayer.isDead ? '☠️' : ''}`;
-        myAmmoEl.innerText = myPlayer.isReloading ? `🔄 RELOADING...` : `AMMO: ${myPlayer.ammo}/${myPlayer.maxAmmo} [Rでリロード]`;
-        peerHpEl.innerText = `${peerPlayer.name} HP: ${peerPlayer.hp} ${peerPlayer.isDead ? '☠️' : ''}`;
+        myHpEl.innerText = `YOUR HP: ${myPlayer.hp}`;
+        myAmmoEl.innerText = myPlayer.isReloading ? `🔄 RELOADING...` : `AMMO: ${myPlayer.ammo}/${myPlayer.maxAmmo}`;
+        peerHpEl.innerText = `${peerPlayer.name} HP: ${peerPlayer.hp}`;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const myCenterX = myPlayer.x + myPlayer.size / 2;
-        const myCenterY = myPlayer.y + myPlayer.size / 2;
+        const myCenterX = myPlayer.x + myPlayer.size / 2, myCenterY = myPlayer.y + myPlayer.size / 2;
 
+        // マップ要素描画
         bushes.forEach(b => {
-            const bCenterX = b.x + b.width / 2; const bCenterY = b.y + b.height / 2;
-            const distToBush = Math.hypot(myCenterX - bCenterX, myCenterY - bCenterY);
-            ctx.fillStyle = (!myPlayer.isVisible && distToBush < 90) ? 'rgba(35, 110, 26, 0.45)' : 'rgba(19, 64, 14, 0.85)';  
+            ctx.fillStyle = (!myPlayer.isVisible && Math.hypot(myCenterX - (b.x + b.width/2), myCenterY - (b.y + b.height/2)) < 90) ? 'rgba(35, 110, 26, 0.45)' : 'rgba(19, 64, 14, 0.85)';  
             ctx.fillRect(b.x, b.y, b.width, b.height);
         });
-
         ctx.fillStyle = '#666'; walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
         medKits.forEach(kit => {
             if (kit.active) {
-                ctx.fillStyle = '#ffffff'; ctx.fillRect(kit.x - kit.size/2, kit.y - kit.size/2, kit.size, kit.size);
+                ctx.fillStyle = '#fff'; ctx.fillRect(kit.x - kit.size/2, kit.y - kit.size/2, kit.size, kit.size);
                 ctx.fillStyle = '#ff0000'; ctx.fillRect(kit.x - 2, kit.y - kit.size/2 + 2, 4, kit.size - 4); ctx.fillRect(kit.x - kit.size/2 + 2, kit.y - 2, kit.size - 4, 4);
             }
         });
 
+        // 自分描画
         if (!myPlayer.isFlying) {
             ctx.save(); ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
             if (!myPlayer.isDead) {
                 ctx.save(); ctx.translate(myCenterX, myCenterY); ctx.rotate(myPlayer.angle);
-                ctx.fillStyle = '#555555'; ctx.fillRect(5, -3, 18, 6);
-                ctx.fillStyle = '#222222'; ctx.fillRect(10, 2, 3, 6); ctx.restore();
+                ctx.fillStyle = '#555'; ctx.fillRect(5, -3, 18, 6); ctx.restore();
             }
             ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(myPlayer.isDead ? '☠️' : '🟢', myCenterX, myCenterY); ctx.restore();
-
             ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x + myPlayer.size/2, myPlayer.y - 8);
-            if (myHpBarTimer > 0 && !myPlayer.isDead) {
-                ctx.fillStyle = '#333'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30, 4);
-                ctx.fillStyle = '#00ff00'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30 * (myPlayer.hp / 100), 4);
-            }
         }
 
+        // 相手描画
         if (!peerPlayer.isDead && !peerPlayer.isFlying) {
-            const peerCenterX = peerPlayer.x + peerPlayer.size / 2;
-            const peerCenterY = peerPlayer.y + peerPlayer.size / 2;
-            const distToPeer = Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY);
-            let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 90);
-
-            if (canSeePeer) {
+            const peerCenterX = peerPlayer.x + peerPlayer.size / 2, peerCenterY = peerPlayer.y + peerPlayer.size / 2;
+            if (peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY) < 90)) {
                 ctx.save(); ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
                 ctx.save(); ctx.translate(peerCenterX, peerCenterY); ctx.rotate(peerPlayer.angle);
-                ctx.fillStyle = '#555555'; ctx.fillRect(5, -3, 18, 6);
-                ctx.fillStyle = '#222222'; ctx.fillRect(10, 2, 3, 6); ctx.restore();
-
+                ctx.fillStyle = '#555'; ctx.fillRect(5, -3, 18, 6); ctx.restore();
                 ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText('🔴', peerCenterX, peerCenterY); ctx.restore();
-
                 ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(peerPlayer.name, peerPlayer.x + peerPlayer.size/2, peerPlayer.y - 8);
-                if (peerHpBarTimer > 0) {
-                    ctx.fillStyle = '#333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30, 4);
-                    ctx.fillStyle = '#ff3333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30 * (peerPlayer.hp / 100), 4);
-                }
             }
         }
 
         if (dropShip.isActive) {
             ctx.fillStyle = '#888'; ctx.fillRect(dropShip.x - 25, dropShip.y - 10, 50, 20);
-            ctx.fillStyle = '#ffcc00'; ctx.fillRect(dropShip.x - 5, dropShip.y - 15, 10, 5);
-            if (myPlayer.isFlying) { ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif'; ctx.fillText('🚀 SPACEまたはEキーで降下！', dropShip.x - 60, dropShip.y + 30); }
+            if (myPlayer.isFlying) { ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif'; ctx.fillText('🚀 SPACEかEで降下！', dropShip.x - 40, dropShip.y + 30); }
         }
 
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
+        // ⚡ 超軽量化：負荷の大きかったピクセルグラデーションを廃止し、高速な円形レイヤーに変更
         if (!myPlayer.isFlying) {
-            ctx.save(); ctx.globalCompositeOperation = 'destination-in';
-            let grad = ctx.createRadialGradient(myCenterX, myCenterY, 80, myCenterX, myCenterY, 200);
-            grad.addColorStop(0, 'rgba(0, 0, 0, 1.0)'); grad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(myCenterX, myCenterY, 200, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.beginPath();
+            ctx.arc(myCenterX, myCenterY, 150, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
 
         window.requestAnimationFrame(gameLoop);
