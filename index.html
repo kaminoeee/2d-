@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX </title>
+    <title>2D APEX</title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -89,13 +89,11 @@
     let myHpBarTimer = 0;
     let peerHpBarTimer = 0;
 
-    // マップランダム生成関数
     function generateHostMap() {
         bushes = [];
         medKits = [];
         walls = [];
 
-        // 🧱 壁のランダム生成 (3〜4個)
         const wallCount = Math.floor(Math.random() * 2) + 3; 
         for (let i = 0; i < wallCount; i++) {
             walls.push({
@@ -106,7 +104,6 @@
             });
         }
 
-        // 🌿 草むらのランダム生成
         for (let i = 0; i < 3; i++) {
             bushes.push({
                 x: Math.floor(Math.random() * 380) + 60,
@@ -115,7 +112,6 @@
             });
         }
 
-        // ➕ 医療キットのランダム生成
         for (let i = 0; i < 5; i++) {
             medKits.push({
                 id: i,
@@ -127,8 +123,9 @@
     }
 
     function resetGameState() {
-        myPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0, color: '#00ff00' };
-        peerPlayer = { x: -999, y: -999, size: 22, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true, color: '#ff3333' };
+        // キャラクターサイズを絵文字に合わせて26に微調整
+        myPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0, angle: 0 };
+        peerPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true, angle: 0 };
         peerTarget = { x: -999, y: -999 };
         myBullets = []; peerBullets = [];
         dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
@@ -193,6 +190,7 @@
                 peerPlayer.isFlying = data.isFlying;
                 peerPlayer.isVisible = data.isVisible;
                 peerPlayer.isDead = data.isDead;
+                peerPlayer.angle = data.angle; // 敵の銃の向きを同期
                 
                 if (peerPlayer.isDead && !resultShown) { endGame(true); }
             } else if (data.type === 'shoot') {
@@ -203,7 +201,6 @@
             } else if (data.type === 'hit_happen') {
                 peerHpBarTimer = data.inBush ? 60 : 120;
             } else if (data.type === 'game_over_signal') {
-                // ロールで判定するため同名でも安全
                 if (data.loserRole === myRole && !resultShown) { endGame(false); }
                 if (data.winnerRole === myRole && !resultShown) { endGame(true); }
             }
@@ -219,11 +216,11 @@
     }
 
     function endGame(isWin) {
-        gameActive = false; // 👈 誤作動による切断アラートの発生を防止
+        gameActive = false; 
         resultShown = true;
         resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
-        else { resultTitle.innerText = "☠️ 部隊全滅 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
+        else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
     }
 
     returnBtn.addEventListener('click', () => {
@@ -258,15 +255,20 @@
         if (myPlayer.isDead || !conn || !conn.open || !gameActive || myPlayer.isReloading || myPlayer.isFlying) return;
         if (myPlayer.ammo <= 0) { myPlayer.isReloading = true; myPlayer.reloadTimer = 75; return; }
 
-        const pX = myPlayer.x + myPlayer.size / 2;
-        const pY = myPlayer.y + myPlayer.size / 2;
-        const angle = Math.atan2(mouseY - pY, mouseX - pX);
+        const pCenterX = myPlayer.x + myPlayer.size / 2;
+        const pCenterY = myPlayer.y + myPlayer.size / 2;
 
         const spread = (Math.random() - 0.5) * 0.08;
-        myBullets.push({ x: pX, y: pY, vx: Math.cos(angle + spread) * 9.5, vy: Math.sin(angle + spread) * 9.5, life: 40 });
+        const finalAngle = myPlayer.angle + spread;
+
+        // 銃口の先端付近から弾が出るように調整
+        const spawnX = pCenterX + Math.cos(finalAngle) * 20;
+        const spawnY = pCenterY + Math.sin(finalAngle) * 20;
+
+        myBullets.push({ x: spawnX, y: spawnY, vx: Math.cos(finalAngle) * 9.5, vy: Math.sin(finalAngle) * 9.5, life: 40 });
         myPlayer.ammo--; 
 
-        conn.send({ type: 'shoot', x: pX, y: pY, angle: angle + spread });
+        conn.send({ type: 'shoot', x: spawnX, y: spawnY, angle: finalAngle });
         shootCooldown = 6; 
     }
 
@@ -280,7 +282,6 @@
         return false;
     }
 
-    // 壁スタック自動脱出関数
     function resolveWallStack() {
         let attempts = 0;
         while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) {
@@ -340,6 +341,11 @@
 
             myPlayer.x = nextX;
             myPlayer.y = nextY;
+
+            // 【新機能】打つ方向（マウスの方向）へ自動で向くアングル計算
+            const pCenterX = myPlayer.x + myPlayer.size / 2;
+            const pCenterY = myPlayer.y + myPlayer.size / 2;
+            myPlayer.angle = Math.atan2(mouseY - pCenterY, mouseX - pCenterX);
         }
 
         if (shootCooldown > 0) shootCooldown--;
@@ -384,7 +390,8 @@
         }
 
         if (conn && conn.open) {
-            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead });
+            // angle情報もパケットに入れて相手に送る
+            conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead, angle: myPlayer.angle });
         }
 
         if (myHpBarTimer > 0) myHpBarTimer--;
@@ -464,19 +471,43 @@
             }
         });
 
+        // 🟢 自分プレイヤーの描画
         if (!myPlayer.isFlying) {
+            ctx.save();
             ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
-            ctx.fillStyle = myPlayer.isDead ? '#555' : myPlayer.color;
-            ctx.beginPath(); ctx.arc(myPlayer.x + myPlayer.size/2, myPlayer.y + myPlayer.size/2, myPlayer.size/2, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1.0;
-            ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x - 5, myPlayer.y - 5);
+            
+            // 🔫 サブマシンガン（武器）を回転させて描画
+            if (!myPlayer.isDead) {
+                ctx.save();
+                ctx.translate(myCenterX, myCenterY);
+                ctx.rotate(myPlayer.angle);
+                ctx.fillStyle = '#555555'; // サブマシンガンの色（グレー）
+                ctx.fillRect(5, -3, 18, 6); // 銃身
+                ctx.fillStyle = '#222222';
+                ctx.fillRect(10, 2, 3, 6);  // マガジン（弾倉）風の突起
+                ctx.restore();
+            }
+
+            // キャラクター見た目の描画
+            ctx.font = '22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (myPlayer.isDead) {
+                ctx.fillText('☠️', myCenterX, myCenterY); // デスボックス化
+            } else {
+                ctx.fillText('🟢', myCenterX, myCenterY); // ロボットシールド風
+            }
+            ctx.restore();
+
+            ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x + myPlayer.size/2, myPlayer.y - 8);
 
             if (myHpBarTimer > 0 && !myPlayer.isDead) {
-                ctx.fillStyle = '#333'; ctx.fillRect(myPlayer.x - 4, myPlayer.y - 14, 30, 4);
-                ctx.fillStyle = '#00ff00'; ctx.fillRect(myPlayer.x - 4, myPlayer.y - 14, 30 * (myPlayer.hp / 100), 4);
+                ctx.fillStyle = '#333'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30, 4);
+                ctx.fillStyle = '#00ff00'; ctx.fillRect(myPlayer.x - 2, myPlayer.y - 18, 30 * (myPlayer.hp / 100), 4);
             }
         }
 
+        // 🔴 敵プレイヤーの描画
         if (!peerPlayer.isDead && !peerPlayer.isFlying) {
             const peerCenterX = peerPlayer.x + peerPlayer.size / 2;
             const peerCenterY = peerPlayer.y + peerPlayer.size / 2;
@@ -485,15 +516,31 @@
             let canSeePeer = peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && distToPeer < 90);
 
             if (canSeePeer) {
+                ctx.save();
                 ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
-                ctx.fillStyle = peerPlayer.color;
-                ctx.beginPath(); ctx.arc(peerPlayer.x + peerPlayer.size/2, peerPlayer.y + peerPlayer.size/2, peerPlayer.size/2, 0, Math.PI * 2); ctx.fill();
-                ctx.globalAlpha = 1.0;
-                ctx.fillStyle = '#fff'; ctx.fillText(peerPlayer.name, peerPlayer.x - 5, peerPlayer.y - 5);
+                
+                // 敵のサブマシンガンの回転
+                ctx.save();
+                ctx.translate(peerCenterX, peerCenterY);
+                ctx.rotate(peerPlayer.angle);
+                ctx.fillStyle = '#555555';
+                ctx.fillRect(5, -3, 18, 6);
+                ctx.fillStyle = '#222222';
+                ctx.fillRect(10, 2, 3, 6);
+                ctx.restore();
+
+                // 敵の見た目
+                ctx.font = '22px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🔴', peerCenterX, peerCenterY);
+                ctx.restore();
+
+                ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(peerPlayer.name, peerPlayer.x + peerPlayer.size/2, peerPlayer.y - 8);
 
                 if (peerHpBarTimer > 0) {
-                    ctx.fillStyle = '#333'; ctx.fillRect(peerPlayer.x - 4, peerPlayer.y - 14, 30, 4);
-                    ctx.fillStyle = '#ff3333'; ctx.fillRect(peerPlayer.x - 4, peerPlayer.y - 14, 30 * (peerPlayer.hp / 100), 4);
+                    ctx.fillStyle = '#333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30, 4);
+                    ctx.fillStyle = '#ff3333'; ctx.fillRect(peerPlayer.x - 2, peerPlayer.y - 18, 30 * (peerPlayer.hp / 100), 4);
                 }
             }
         }
@@ -507,7 +554,6 @@
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
-        // 視野制限（暗闇エフェクト）の描画
         if (!myPlayer.isFlying) {
             ctx.save();
             ctx.globalCompositeOperation = 'destination-in';
