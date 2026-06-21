@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX </title>
+    <title>2D APEX</title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -226,7 +226,6 @@
     let dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
     let myHpBarTimer = 0, peerHpBarTimer = 0;
 
-    // 軽量化のための通信制御用変数
     let lastSentState = { x: 0, y: 0, angle: 0, hp: 100, isFlying: true, isVisible: true, isDead: false };
     let syncThrottleCounter = 0;
 
@@ -294,10 +293,23 @@
 
     function setupGameConnection() {
         if (!conn) return;
-        if (myRole === "host") { setTimeout(() => { conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls }); }, 300); }
+
+        // 【修正】接続が完全にオープンしてからマップデータを送信する
+        if (myRole === "host") {
+            if (conn.open) {
+                sendMapData();
+            } else {
+                conn.on('open', sendMapData);
+            }
+        }
 
         conn.on('data', (data) => {
-            if (data.type === 'map_sync') { bushes = data.bushes; medKits = data.medKits; walls = data.walls; }
+            // 【修正】受け取ったマップデータを確実にローカル変数へ反映
+            if (data.type === 'map_sync') { 
+                bushes = data.bushes; 
+                medKits = data.medKits; 
+                walls = data.walls; 
+            }
             else if (data.type === 'state') {
                 peerTarget.x = data.x; peerTarget.y = data.y;
                 if (data.hp < peerPlayer.hp) { peerHpBarTimer = data.isVisible ? 120 : 60; }
@@ -318,6 +330,12 @@
         if (conn.open) startGame(); else conn.on('open', startGame);
     }
 
+    function sendMapData() {
+        if (conn && conn.open) {
+            conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls });
+        }
+    }
+
     function startGame() {
         loginArea.style.display = 'none'; lobbyTitleWrap.style.display = 'none'; bgEffect.style.display = 'none'; gameArea.style.display = 'block';
         const container = document.querySelector('.container');
@@ -328,7 +346,7 @@
     function endGame(isWin) {
         gameActive = false; resultShown = true; resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
-        else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
+        else { resultTitle.innerText = "☠️ 部隊全滅(DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
     }
 
     returnBtn.addEventListener('click', () => {
@@ -418,7 +436,6 @@
         }
         myPlayer.isVisible = !inBush;
 
-        // 相手プレイヤーの滑らかな位置予測移動（補間率を最適化）
         if (!peerPlayer.isFlying) {
             peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.35; 
             peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.35;
@@ -436,7 +453,6 @@
             }
         }
 
-        // ⚡ 極限最適化：通信頻度のスロットリング（1秒間に約30回に間引く ＆ 変化がない時は送らない）
         syncThrottleCounter++;
         if (conn && conn.open && syncThrottleCounter % 2 === 0) {
             const hasChanged = Math.abs(lastSentState.x - myPlayer.x) > 0.5 || 
@@ -456,7 +472,6 @@
         if (myHpBarTimer > 0) myHpBarTimer--;
         if (peerHpBarTimer > 0) peerHpBarTimer--;
 
-        // 弾移動処理
         for (let i = myBullets.length - 1; i >= 0; i--) {
             let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
             let hitWall = false; for (let w of walls) { if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; } }
@@ -485,7 +500,6 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const myCenterX = myPlayer.x + myPlayer.size / 2, myCenterY = myPlayer.y + myPlayer.size / 2;
 
-        // マップ要素描画
         bushes.forEach(b => {
             ctx.fillStyle = (!myPlayer.isVisible && Math.hypot(myCenterX - (b.x + b.width/2), myCenterY - (b.y + b.height/2)) < 90) ? 'rgba(35, 110, 26, 0.45)' : 'rgba(19, 64, 14, 0.85)';  
             ctx.fillRect(b.x, b.y, b.width, b.height);
@@ -498,7 +512,6 @@
             }
         });
 
-        // 自分描画
         if (!myPlayer.isFlying) {
             ctx.save(); ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
             if (!myPlayer.isDead) {
@@ -510,7 +523,6 @@
             ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x + myPlayer.size/2, myPlayer.y - 8);
         }
 
-        // 相手描画
         if (!peerPlayer.isDead && !peerPlayer.isFlying) {
             const peerCenterX = peerPlayer.x + peerPlayer.size / 2, peerCenterY = peerPlayer.y + peerPlayer.size / 2;
             if (peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY) < 90)) {
@@ -531,7 +543,6 @@
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
-        // ⚡ 超軽量化：負荷の大きかったピクセルグラデーションを廃止し、高速な円形レイヤーに変更
         if (!myPlayer.isFlying) {
             ctx.save();
             ctx.globalCompositeOperation = 'destination-in';
