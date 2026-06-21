@@ -95,7 +95,7 @@
         medKits = [];
         walls = [];
 
-        //  壁のランダム生成コード (3〜4個)
+        // 🧱 壁のランダム生成 (3〜4個)
         const wallCount = Math.floor(Math.random() * 2) + 3; 
         for (let i = 0; i < wallCount; i++) {
             walls.push({
@@ -106,7 +106,7 @@
             });
         }
 
-        //  草むらのランダム生成コード
+        // 🌿 草むらのランダム生成
         for (let i = 0; i < 3; i++) {
             bushes.push({
                 x: Math.floor(Math.random() * 380) + 60,
@@ -115,7 +115,7 @@
             });
         }
 
-        // 医療キットのランダム生成コード
+        // ➕ 医療キットのランダム生成
         for (let i = 0; i < 5; i++) {
             medKits.push({
                 id: i,
@@ -203,7 +203,7 @@
             } else if (data.type === 'hit_happen') {
                 peerHpBarTimer = data.inBush ? 60 : 120;
             } else if (data.type === 'game_over_signal') {
-                // ＊修正同じ名前でもバグらないよう、ロール(役割)で勝敗を判定した。
+                // ロールで判定するため同名でも安全
                 if (data.loserRole === myRole && !resultShown) { endGame(false); }
                 if (data.winnerRole === myRole && !resultShown) { endGame(true); }
             }
@@ -219,6 +219,7 @@
     }
 
     function endGame(isWin) {
+        gameActive = false; // 👈 誤作動による切断アラートの発生を防止
         resultShown = true;
         resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
@@ -279,7 +280,7 @@
         return false;
     }
 
-    // 壁にハマった時に外へ自動で押し出す関数
+    // 壁スタック自動脱出関数
     function resolveWallStack() {
         let attempts = 0;
         while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) {
@@ -421,7 +422,6 @@
 
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
-                    // 【バグ修正】名前ではなく、ロールを使って勝敗信号を送信
                     const peerRole = (myRole === "host") ? "guest" : "host";
                     conn.send({ type: 'game_over_signal', loserRole: myRole, winnerRole: peerRole });
                     if (!resultShown) endGame(false);
@@ -507,7 +507,7 @@
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
-        // 【新機能】視野制限（暗闇エフェクト）の描画
+        // 視野制限（暗闇エフェクト）の描画
         if (!myPlayer.isFlying) {
             ctx.save();
             ctx.globalCompositeOperation = 'destination-in';
