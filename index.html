@@ -460,7 +460,7 @@
     function endGame(isWin) {
         gameActive = false; resultShown = true; resultArea.style.display = 'flex';
         if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; resultTitle.style.textShadow = "0 0 15px rgba(255,204,0,0.6)"; }
-        else { resultTitle.innerText = "☠️ 部隊撃破 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; resultTitle.style.textShadow = "0 0 15px rgba(255,51,51,0.6)"; }
+        else { resultTitle.innerText = "☠️ 部隊全滅 (DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; resultTitle.style.textShadow = "0 0 15px rgba(255,51,51,0.6)"; }
     }
 
     returnBtn.addEventListener('click', () => {
