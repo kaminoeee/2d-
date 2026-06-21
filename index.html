@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX (HUD Fix Edition)</title>
+    <title>2D APEX</title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -133,13 +133,66 @@
             text-align: left;
         }
 
+        /* 🎁 開発者応援セクション */
+        .support-section {
+            background: rgba(230, 81, 0, 0.1); 
+            border: 1px solid rgba(230, 81, 0, 0.3); 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-top: 25px;
+            text-align: left;
+            box-shadow: inset 0 0 10px rgba(230, 81, 0, 0.05);
+        }
+        .support-title {
+            margin: 0 0 8px 0; 
+            font-size: 0.85rem; 
+            color: #ff9900; 
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .support-desc {
+            margin: 0 0 12px 0; 
+            font-size: 0.8rem; 
+            color: #cbd5e1; 
+            line-height: 1.5;
+        }
+        #target-email {
+            color: #ffcc00; 
+            background: rgba(0, 0, 0, 0.3); 
+            padding: 3px 6px; 
+            border: 1px solid rgba(255,204,0,0.3); 
+            border-radius: 4px; 
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-top: 2px;
+            transition: all 0.2s ease;
+        }
+        #target-email:hover {
+            background: rgba(255,204,0,0.1);
+            border-color: #ffcc00;
+        }
+        #amajif-btn {
+            background: linear-gradient(135deg, #e65100 0%, #ff9900 100%);
+            color: white;
+            margin-top: 0;
+            padding: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(230, 81, 0, 0.3);
+        }
+        #amajif-btn:hover {
+            background: linear-gradient(135deg, #ff9900 0%, #ffb300 100%);
+            box-shadow: 0 6px 14px rgba(255,153,0,0.5);
+        }
+
         /* チャット募集欄 */
         .chat-promo { 
             background: rgba(14, 17, 27, 0.7); 
             border: 1px solid rgba(255,204,0,0.15); 
             border-radius: 8px; 
             padding: 15px; 
-            margin-top: 25px; 
+            margin-top: 15px; 
             text-align: left; 
         }
         .chat-promo p { margin: 0 0 12px 0; font-size: 0.85rem; font-weight: bold; color: #ffcc00; letter-spacing: 0.5px; }
@@ -163,10 +216,10 @@
             border-color: #ffcc00; 
         }
 
-        /* --- 修正：ゲーム画面・HUD用のスタイル --- */
+        /* --- ゲーム画面・HUD用のスタイル --- */
         #game-area {
             position: relative;
-            z-index: 10; /* ロビー背景より手前に配置 */
+            z-index: 10;
         }
         .hud { 
             display: flex; 
@@ -210,7 +263,6 @@
 </head>
 <body>
 
-<!-- 背景エフェクト -->
 <div class="bg-animation" id="bg-effect"></div>
 
 <div class="container">
@@ -218,7 +270,6 @@
         <h1>2D APEX</h1>
     </div>
     
-    <!-- ロビー画面 -->
     <div id="login-area">
         <div class="input-group">
             <label for="username-input">OPERATOR NAME / ユーザー名:</label>
@@ -231,6 +282,15 @@
         <button id="join-btn">READY TO DROP / マッチにドロップイン</button>
         <p class="status" id="status">SYSTEM : 準備完了。部隊を編成してください。</p>
 
+        <div class="support-section">
+            <p class="support-title">🎁 SUPPLY DROP / 開発者を応援する（匿名送付可能）</p>
+            <p class="support-desc">
+                サイトを気に入ったら、Amazonギフトカード（15円〜）でジュースをおごっていただけると励みになります！<br>
+                宛先メールアドレス：<strong id="target-email" title="クリックでコピー">kaminoeee@gmail.com</strong>
+            </p>
+            <button id="amajif-btn">アドレスをコピーしてAmazonを開く ↗</button>
+        </div>
+
         <div class="chat-promo">
             <p>💬 一緒に遊ぶ仲間を募集しよう！どちらでもチャット可能：</p>
             <div class="chat-links">
@@ -240,7 +300,6 @@
         </div>
     </div>
 
-    <!-- ゲーム画面 -->
     <div id="game-area" style="display: none;">
         <div class="hud">
             <div id="my-hp-bar" style="color: #00ff00;">YOUR HP: 100</div>
@@ -276,6 +335,29 @@
 
     let myHpBarTimer = 0;
     let peerHpBarTimer = 0;
+
+    // --- Amazonギフトカード送付用のスクリプト処理 ---
+    const targetEmail = document.getElementById('target-email');
+    const amajifBtn = document.getElementById('amajif-btn');
+
+    function copyEmailAndOpenAmazon() {
+        const emailText = targetEmail.innerText;
+        navigator.clipboard.writeText(emailText).then(() => {
+            alert('宛先メールアドレス「' + emailText + '」をクリップボードにコピーしました！\nAmazonのページを開きます。');
+            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
+        }).catch(err => {
+            // クリップボードAPIが失敗した場合のフォールバック
+            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
+        });
+    }
+
+    targetEmail.addEventListener('click', () => {
+        navigator.clipboard.writeText(targetEmail.innerText).then(() => {
+            alert('宛先メールアドレスをコピーしました！');
+        });
+    });
+    amajifBtn.addEventListener('click', copyEmailAndOpenAmazon);
+    // ------------------------------------------------
 
     function generateHostMap() {
         bushes = []; medKits = []; walls = [];
@@ -385,7 +467,6 @@
         gameActive = false; if (conn) conn.close(); if (peer) peer.destroy();
         resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block'; lobbyTitleWrap.style.display = 'block'; bgEffect.style.display = 'block';
         
-        // コンテナの見た目をロビー用に元に戻す
         const container = document.querySelector('.container');
         container.style.maxWidth = '550px';
         container.style.background = 'rgba(20, 24, 37, 0.85)';
@@ -531,7 +612,7 @@
             if (hitWall) { peerBullets.splice(i, 1); continue; }
 
             if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                myPlayer.hp -= 3; // 1発3ダメージ
+                myPlayer.hp -= 3; 
                 myHpBarTimer = 120;
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
