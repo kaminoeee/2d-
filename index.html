@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
+    <title>2D APEX </title>
     <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
@@ -80,7 +80,6 @@
     const keys = {};
     let mouseX = 0, mouseY = 0, isMouseDown = false, shootCooldown = 0;
 
-    // 壁、草むら、回復キットをすべてHost側でランダム生成するように変更
     let walls = [];
     let bushes = [];
     let medKits = [];
@@ -90,24 +89,24 @@
     let myHpBarTimer = 0;
     let peerHpBarTimer = 0;
 
-    // 【新規】マップ全体のランダム生成関数（Host用）
+    // マップランダム生成関数
     function generateHostMap() {
         bushes = [];
         medKits = [];
         walls = [];
 
-        // 🧱 壁のランダム生成 (3〜4個)
+        //  壁のランダム生成コード (3〜4個)
         const wallCount = Math.floor(Math.random() * 2) + 3; 
         for (let i = 0; i < wallCount; i++) {
             walls.push({
                 x: Math.floor(Math.random() * 350) + 80,
                 y: Math.floor(Math.random() * 200) + 60,
-                width: Math.random() > 0.5 ? 25 : 80,  // 縦長か横長か
+                width: Math.random() > 0.5 ? 25 : 80,
                 height: Math.random() > 0.5 ? 100 : 25
             });
         }
 
-        // 🌿 草むらのランダム生成
+        //  草むらのランダム生成コード
         for (let i = 0; i < 3; i++) {
             bushes.push({
                 x: Math.floor(Math.random() * 380) + 60,
@@ -116,7 +115,7 @@
             });
         }
 
-        // ➕ 医療キットのランダム生成
+        // 医療キットのランダム生成コード
         for (let i = 0; i < 5; i++) {
             medKits.push({
                 id: i,
@@ -154,7 +153,7 @@
         
         peer.on('open', () => { 
             statusEl.innerText = '他の部隊がドロップシップに搭乗するのを待っています...'; 
-            generateHostMap(); // マップをランダム生成
+            generateHostMap(); 
         });
         
         peer.on('connection', (connection) => { 
@@ -179,7 +178,6 @@
 
         if (myRole === "host") {
             setTimeout(() => {
-                // 壁（walls）の情報も合わせて同期するよう拡張
                 conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls });
             }, 500);
         }
@@ -188,7 +186,7 @@
             if (data.type === 'map_sync') {
                 bushes = data.bushes;
                 medKits = data.medKits;
-                walls = data.walls; // ゲスト側でランダム壁を受け取る
+                walls = data.walls; 
             } else if (data.type === 'state') {
                 peerTarget.x = data.x; peerTarget.y = data.y;
                 peerPlayer.hp = data.hp; peerPlayer.name = data.name;
@@ -205,8 +203,9 @@
             } else if (data.type === 'hit_happen') {
                 peerHpBarTimer = data.inBush ? 60 : 120;
             } else if (data.type === 'game_over_signal') {
-                if (data.loser === myPlayer.name && !resultShown) { endGame(false); }
-                if (data.winner === myPlayer.name && !resultShown) { endGame(true); }
+                // ＊修正同じ名前でもバグらないよう、ロール(役割)で勝敗を判定した。
+                if (data.loserRole === myRole && !resultShown) { endGame(false); }
+                if (data.winnerRole === myRole && !resultShown) { endGame(true); }
             }
         });
         conn.on('close', handleDisconnect); conn.on('error', handleDisconnect);
@@ -280,15 +279,13 @@
         return false;
     }
 
-    // 【新規】壁にハマった時に外へ押し出す関数
+    // 壁にハマった時に外へ自動で押し出す関数
     function resolveWallStack() {
         let attempts = 0;
-        // もし壁の中にいたら、外に出るまで少しずつ下にずらす（最大100ピクセル分試行）
         while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) {
             myPlayer.y += 4;
             attempts++;
         }
-        // それでもダメなら、画面上部の安全圏へ強制退避
         if (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size)) {
             myPlayer.x = 20;
             myPlayer.y = 20;
@@ -306,12 +303,12 @@
                 dropShip.isActive = false;
                 if (myPlayer.isFlying) { 
                     myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; 
-                    resolveWallStack(); // 降下完了時にハマり判定
+                    resolveWallStack(); 
                 }
             }
             if (myPlayer.isFlying && (keys[' '] || keys['e'])) {
                 myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false;
-                resolveWallStack(); // 手動降下時にハマり判定
+                resolveWallStack(); 
             }
         }
 
@@ -424,7 +421,9 @@
 
                 if (myPlayer.hp <= 0 && !myPlayer.isDead) {
                     myPlayer.hp = 0; myPlayer.isDead = true;
-                    conn.send({ type: 'game_over_signal', loser: myPlayer.name, winner: peerPlayer.name });
+                    // 【バグ修正】名前ではなく、ロールを使って勝敗信号を送信
+                    const peerRole = (myRole === "host") ? "guest" : "host";
+                    conn.send({ type: 'game_over_signal', loserRole: myRole, winnerRole: peerRole });
                     if (!resultShown) endGame(false);
                 }
                 peerBullets.splice(i, 1); continue;
@@ -508,8 +507,7 @@
         ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
         ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
 
-        // 【新規】視野制限（暗闇エフェクト）の描画ロジック
-        // 降下中（飛行中）はマップ全体が見え、降りると自分の周り200px以外が隠れます
+        // 【新機能】視野制限（暗闇エフェクト）の描画
         if (!myPlayer.isFlying) {
             ctx.save();
             ctx.globalCompositeOperation = 'destination-in';
@@ -527,5 +525,4 @@
     }
 </script>
 </body>
-</html>
 </html>
