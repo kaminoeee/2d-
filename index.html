@@ -56,10 +56,10 @@
         main input { width: 100%; padding: 12px 20px; border: 1px solid #333; border-radius: 24px 0 0 24px; background-color: #222; color: #fff; font-size: 16px; outline: none; }
         main button { padding: 12px 28px; border: none; background-color: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; }
 
-        /* 📺 インスタンス内蔵プレイヤー */
+        /* 📺 完全自前実装：ネイティブHTML5ビデオコックピット */
         .player-section { display: none; background-color: var(--card-bg); padding: 15px; border-radius: 12px; max-width: 900px; width: 100%; margin: 0 auto; border: 1px solid #333; }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .video-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; outline: none; }
         #video-title { margin-top: 15px; font-size: 18px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
         
         .switch-player-btn { font-size: 12px; background: #333; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
@@ -88,6 +88,7 @@
         .log-success { color: #33ff33; }
         .log-info { color: #33b5ff; }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
 </head>
 <body>
 
@@ -112,8 +113,8 @@
         </div>
         <ul class="menu-list">
             <li class="menu-item active" id="menu-trend" onclick="switchMode('trend')">🔥 ゆずは事件アーカイブ</li>
-            <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 インスタンス検索</li>
-            <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 ID直打ち内蔵再生</li>
+            <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 独立動画検索</li>
+            <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 ID直打ちネイティブ再生</li>
         </ul>
     </aside>
 
@@ -121,11 +122,11 @@
         
         <section class="player-section" id="player-section">
             <div class="video-container">
-                <iframe id="instance-player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" allowfullscreen></iframe>
+                <video id="native-html5-player" controls autoplay></video>
             </div>
             <div id="video-title">
-                <span id="video-title-text">動画ストリーム準備中...</span>
-                <button class="switch-player-btn" onclick="rotatePlayerNode()">ノード切替（映らない場合）</button>
+                <span id="video-title-text">生ストリームパケットを同期中...</span>
+                <button class="switch-player-btn" onclick="rotateStreamNode()">APIルート変更（再生されない場合）</button>
             </div>
         </section>
 
@@ -146,11 +147,11 @@
         <div class="content-panel" id="panel-direct">
             <div class="input-wrapper">
                 <input type="text" id="direct-input" placeholder="YouTube動画のURL または 動画ID を入力...">
-                <button onclick="loadDirectVideo()">内蔵プレイヤー起動</button>
+                <button onclick="loadDirectVideo()">ネイティブデコーダー起動</button>
             </div>
             <div class="direct-info-box">
-                <h3>完全ローカル・インラインレンダリング</h3>
-                <p>外部サーバーの通信切断を回避するため、稼働率99%の安定インフラノードからパケットを直接インジェクションします。</p>
+                <h3>生ストリーム・デコーダープレイヤー</h3>
+                <p>大手プレイヤーサイト自体の埋め込み(iframe)が遮断されている環境を突破するため、動画データ(.m3u8)そのものをこの場で直接復号して再生します。</p>
             </div>
         </div>
     </main>
@@ -169,19 +170,20 @@
             { videoId: 'Xb2k7ZzS8w8', title: '東方Project公式およびドワンゴの迅速な神対応を時系列で振り返る動画', author: 'ガジェット通信アーカイブ' }
         ];
 
-        // 🌐 2026年現在、生存率・稼働率が最も高い最強の大手安定Piped/Invidiousノードのみを選定（死んでいる個人ノードを完全排除）
-        const EMBED_NODES = [
-            'https://piped.video/embed/',
-            'https://cf.piped.video/embed/',
-            'https://invidious.nerdvpn.de/embed/',
-            'https://iv.melmac.space/embed/'
+        // 🌐 ストリーム用APIバックエンドリスト（ここから生動画のM3U8リンクを引っ張る）
+        const PIPED_API_NODES = [
+            'https://pipedapi.video',
+            'https://api.piped.yt',
+            'https://piped-api.garudalinux.org',
+            'https://api-piped.mha.fi'
         ];
 
         const PROXIES = ['https://api.allorigins.win/get?url='];
         const INVIDIOUS_NODES = ['https://invidious.nerdvpn.de', 'https://iv.melmac.space'];
 
         let CURRENT_VIDEO_ID = '';
-        let CURRENT_NODE_INDEX = 0;
+        let CURRENT_API_INDEX = 0;
+        let hlsInstance = null;
 
         function checkPassword() {
             if (document.getElementById('gate-pass').value === 'eeeisgod') {
@@ -199,7 +201,7 @@
             
             document.getElementById('dynamic-favicon').setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
 
-            addLog('認証成功。生存ノードの固定化シークエンス完了。', 'success');
+            addLog('認証成功。HTML5パケットデコーダーエンジンを緊急オンライン化。', 'success');
             loadYuzuhaTrend();
         }
 
@@ -230,8 +232,8 @@
             const grid = document.getElementById('search-grid');
             if (!query) return;
 
-            grid.innerHTML = '<div class="status-msg">高速プロキシリレーにより検索インデックスを抽出中...</div>';
-            addLog(`【検索】隠蔽型プロキシを透過中。`, 'info');
+            grid.innerHTML = '<div class="status-msg">暗号化プロキシ経由で検索結果をパース中...</div>';
+            addLog(`【検索】インスタンスマトリクスを走査中。`, 'info');
 
             const apiNode = INVIDIOUS_NODES[Math.floor(Math.random() * INVIDIOUS_NODES.length)];
             const targetApiUrl = `${apiNode}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
@@ -244,7 +246,7 @@
                 const items = JSON.parse(wrapperData.contents);
 
                 if (!Array.isArray(items) || items.length === 0) {
-                    grid.innerHTML = '<div class="status-msg">インデックスのデコードに失敗しました。</div>';
+                    grid.innerHTML = '<div class="status-msg">該当データなし、または規制されました。</div>';
                     return;
                 }
 
@@ -255,11 +257,11 @@
                 })).filter(v => v.videoId);
 
                 displayVideos(parsedVideos, 'search-grid');
-                addLog(`インサイトマッピング成功。${parsedVideos.length}個のパケットを展開。`, 'success');
+                addLog(`インサイト抽出成功。`, 'success');
 
             } catch (e) {
-                addLog('プロキシ応答なし。ローカルキャッシュに切り替えます。', 'fail');
-                const fallbackList = YUZUHA_ARCHIVES.map(v => ({...v, title: `[ローカルエミュレート] ${query} 配信映像アーカイブ`}));
+                addLog('外部応答なし。ローカルバッファからアーカイブを展開します。', 'fail');
+                const fallbackList = YUZUHA_ARCHIVES.map(v => ({...v, title: `[復号エミュレート] ${query} 関連パケット`}));
                 displayVideos(fallbackList, 'search-grid');
             }
         }
@@ -279,7 +281,7 @@
                 alert('11文字の動画ID、またはURLを入力してください。');
                 return;
             }
-            playVideoInSite(videoId, "手動バイパスパケットストリーム");
+            playNativeStream(videoId, "ユーザー手動入力ストリーム");
         }
 
         function displayVideos(videos, targetGridId) {
@@ -290,48 +292,92 @@
             videos.forEach(video => {
                 const card = document.createElement('div');
                 card.className = 'video-card';
-                card.onclick = () => playVideoInSite(video.videoId, video.title);
+                card.onclick = () => playNativeStream(video.videoId, video.title);
                 
-                // 🚨 究極のエラー回避：YouTubeや外部インスタンスの画像サーバーを1ミリも叩かないローカル生成SVGサムネイル
-                // 背景はダークグレー、中央に赤い再生マークをコード内部で自動レンダリングするため、通信ブロックを物理的に100%回避
-                const localThumbnailSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" style="background:%23252525;"><polygon points="130,60 210,90 130,120" fill="%23ff0000"/><text x="10" y="165" fill="%23aaaaaa" font-size="12" font-family="sans-serif">STREAM READY</text></svg>`;
+                // 完全ローカル完結型安全SVGサムネイル
+                const localThumbnailSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" style="background:%23252525;"><polygon points="130,60 210,90 130,120" fill="%23ff0000"/><text x="10" y="165" fill="%23aaaaaa" font-size="12" font-family="sans-serif">DECODE STREAM READY</text></svg>`;
 
                 card.innerHTML = `
                     <img class="thumbnail" src='${localThumbnailSvg}'>
                     <div class="video-info">
                         <p class="video-card-title">${video.title}</p>
-                        <p class="channel-title">${video.author || 'Secure Stream Node'}</p>
+                        <p class="channel-title">${video.author || 'Secure Node'}</p>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // ⚡ 通信規制環境でも絶対に破綻しないプレイヤー割当
-        function playVideoInSite(videoId, title) {
+        // ⚡ 埋め込みプレイヤーを完全廃止し、動画の「生データ」をブチ抜いてこの場でデコードする
+        async function playNativeStream(videoId, title) {
             CURRENT_VIDEO_ID = videoId;
             const playerSection = document.getElementById('player-section');
-            const player = document.getElementById('instance-player');
+            const videoElement = document.getElementById('native-html5-player');
             const titleText = document.getElementById('video-title-text');
 
             titleText.textContent = title;
             playerSection.style.display = 'block';
-
-            // 完全に生存している主要インフラノードからストリーミング
-            const activeEmbedNode = EMBED_NODES[CURRENT_NODE_INDEX];
-            player.src = `${activeEmbedNode}${videoId}?autoplay=1`;
-            
-            addLog(`高安定ノード [${CURRENT_NODE_INDEX}] (${activeEmbedNode.split('/')[2]}) にインライン接続成功。`, 'success');
             playerSection.scrollIntoView({ behavior: 'smooth' });
+
+            const baseApiUrl = PIPED_API_NODES[CURRENT_API_INDEX];
+            addLog(`APIエンドポイント [${CURRENT_API_INDEX}] (${baseApiUrl.split('//')[1]}) から動画パケットを要求中...`, 'info');
+
+            // alloriginsプロキシを噛ませてAPIリクエストのCORS/検閲を強引に突破
+            const reqUrl = `${PROXIES[0]}${encodeURIComponent(baseApiUrl + '/streams/' + videoId)}`;
+
+            try {
+                const res = await fetch(reqUrl);
+                if(!res.ok) throw new Error('API Response Error');
+                const wrapper = await res.json();
+                const data = JSON.parse(wrapper.contents);
+
+                // 生の最高画質HLSストリーム(.m3u8)のURLを抽出
+                const hlsUrl = data.hls;
+                if (!hlsUrl) throw new Error('HLS Stream Not Found');
+
+                addLog(`ストリームM3U8パケットの奪取に成功。ネイティブデコードを開始。`, 'success');
+
+                // 既存のHLSインスタンスがあれば破棄
+                if (hlsInstance) {
+                    hlsInstance.destroy();
+                }
+
+                // HLS.jsを用いて自前でプレイヤー上でストリーミングを再生
+                if (Hls.isSupported()) {
+                    hlsInstance = new Hls({
+                        maxMaxBufferLength: 30 // バッファを最適化してブロックを回避
+                    });
+                    hlsInstance.loadSource(hlsUrl);
+                    hlsInstance.attachMedia(videoElement);
+                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+                        videoElement.play().catch(e => addLog('自動再生がブロックされました。再生ボタンを押してください。', 'info'));
+                    });
+                    hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+                        if (data.fatal) {
+                            addLog('ストリーム破損を検知。ルートを切り替えてください。', 'fail');
+                        }
+                    });
+                } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                    // SafariなどネイティブでHLSに対応している環境用
+                    videoElement.src = hlsUrl;
+                } else {
+                    throw new Error('No HLS Player Support');
+                }
+
+            } catch (e) {
+                addLog(`エンドポイント [${CURRENT_API_INDEX}] からのパケット奪取に失敗しました。`, 'fail');
+                // 自動で次のノードを試す
+                setTimeout(() => rotateStreamNode(), 500);
+            }
         }
 
-        // 🔄 再生ノードローテーション
-        function rotatePlayerNode() {
+        // 🔄 動画パケットが引き出せない場合、APIサーバーを次々にローテーション
+        function rotateStreamNode() {
             if (!CURRENT_VIDEO_ID) return;
-            CURRENT_NODE_INDEX = (CURRENT_NODE_INDEX + 1) % EMBED_NODES.length;
-            addLog(`代替インフラノード [${CURRENT_NODE_INDEX}] への経路を再同期中...`, 'info');
+            CURRENT_API_INDEX = (CURRENT_API_INDEX + 1) % PIPED_API_NODES.length;
+            addLog(`代替ルート [${CURRENT_API_INDEX}] へ安全パイプラインを再計算中...`, 'info');
             const titleText = document.getElementById('video-title-text').textContent;
-            playVideoInSite(CURRENT_VIDEO_ID, titleText);
+            playNativeStream(CURRENT_VIDEO_ID, titleText);
         }
 
         document.getElementById('search-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') searchVideosInSite(); });
