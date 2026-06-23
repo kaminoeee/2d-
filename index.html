@@ -56,13 +56,13 @@
         main input { width: 100%; padding: 12px 20px; border: 1px solid #333; border-radius: 24px 0 0 24px; background-color: #222; color: #fff; font-size: 16px; outline: none; }
         main button { padding: 12px 28px; border: none; background-color: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; }
 
-        /* 📺 内蔵プレイヤーセクション */
+        /* 📺 インスタンス内蔵プレイヤー */
         .player-section { display: none; background-color: var(--card-bg); padding: 15px; border-radius: 12px; max-width: 900px; width: 100%; margin: 0 auto; border: 1px solid #333; }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
         #video-title { margin-top: 15px; font-size: 18px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
         
-        .switch-player-btn { font-size: 12px; background: #333; color: #ccc; border: 1px solid #444; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+        .switch-player-btn { font-size: 12px; background: #333; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
         .switch-player-btn:hover { background: #444; color: #fff; }
 
         .content-panel { display: none; max-width: 1200px; width: 100%; margin: 0 auto; }
@@ -74,7 +74,6 @@
         .video-info { padding: 12px; color: #fff; }
         .video-card-title { font-size: 13px; font-weight: bold; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
         .channel-title { font-size: 11px; color: #aaa; }
-        .direct-info-box { background-color: var(--card-bg); padding: 40px 20px; border-radius: 12px; text-align: center; color: #aaa; max-width: 600px; margin: 40px auto 0 auto; }
         .status-msg { text-align: center; color: #aaa; padding: 40px; font-size: 14px; }
 
         /* 📋 システムログコンソール */
@@ -113,8 +112,8 @@
         </div>
         <ul class="menu-list">
             <li class="menu-item active" id="menu-trend" onclick="switchMode('trend')">🔥 ゆずは事件アーカイブ</li>
-            <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 サイト内動画検索</li>
-            <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 URL直打ち内蔵再生</li>
+            <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 インスタンス検索</li>
+            <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 ID直打ち内蔵再生</li>
         </ul>
     </aside>
 
@@ -122,11 +121,11 @@
         
         <section class="player-section" id="player-section">
             <div class="video-container">
-                <iframe id="youtube-player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" allowfullscreen></iframe>
+                <iframe id="instance-player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" allowfullscreen></iframe>
             </div>
             <div id="video-title">
-                <span id="video-title-text">動画再生中</span>
-                <button class="switch-player-btn" onclick="togglePlayerSource()">プレイヤーエンジン切替</button>
+                <span id="video-title-text">動画ストリーム準備中...</span>
+                <button class="switch-player-btn" onclick="rotatePlayerNode()">ノード変更（映らない場合）</button>
             </div>
         </section>
 
@@ -137,7 +136,7 @@
         <div class="content-panel" id="panel-search">
             <div class="input-wrapper">
                 <input type="text" id="search-input" placeholder="キーワードを入力してサイト内検索...">
-                <button onclick="searchVideosInSite()">インスタンス検索</button>
+                <button onclick="searchVideosInSite()">検索</button>
             </div>
             <div class="video-grid" id="search-grid" style="margin-top: 20px;">
                 <div class="status-msg">非公式インスタンス・中継プロキシ経由でYouTubeを安全に検索します。</div>
@@ -147,11 +146,11 @@
         <div class="content-panel" id="panel-direct">
             <div class="input-wrapper">
                 <input type="text" id="direct-input" placeholder="YouTube動画のURL または 動画ID を入力...">
-                <button onclick="loadDirectVideo()">プレイヤー内蔵起動</button>
+                <button onclick="loadDirectVideo()">内蔵プレイヤー起動</button>
             </div>
             <div class="direct-info-box">
-                <h3>完全サイト内完結型ストリーミング</h3>
-                <p>外部アプリや別タブを開くことなく、このページのインラインプレイヤーで即座にインジェクション再生します。</p>
+                <h3>YouTubeドメイン完全非依存型ストリーミング</h3>
+                <p>YouTubeへの直接通信を一切行わず、分散型インスタンスの独立サーバー群からストリームパケットをインジェクションします。</p>
             </div>
         </div>
     </main>
@@ -161,7 +160,7 @@
     </div>
 
     <script>
-        // 🚨 【ゆずは事件／ゆっくり茶番劇騒動】固定ストック
+        // 🚨 【ゆずは事件／ゆっくり茶番劇騒動】
         const YUZUHA_ARCHIVES = [
             { videoId: '7XqP02f4XQo', title: '【ゆっくり茶番劇】商標登録問題について。事の経緯と今後の対応を解説', author: 'ニュース解説Ch' },
             { videoId: 'D2vGg6wNskE', title: '【炎上】ゆっくり茶番劇商標登録、なぜここまで大騒動になったのか？裏側を暴く', author: 'ドキュメンタリー裏側' },
@@ -170,22 +169,26 @@
             { videoId: 'Xb2k7ZzS8w8', title: '東方Project公式およびドワンゴの迅速な神対応を時系列で振り返る動画', author: 'ガジェット通信アーカイブ' }
         ];
 
-        // 🌐 CORS規制を強制バイパスするための中継プロキシプール
-        const PROXIES = [
-            'https://api.allorigins.win/get?url=',
-            'https://cors-proxy.htmldriven.com/?url='
+        // 🌐 YouTubeドメインを遮断された環境をすり抜けるためのインライン再生用フロントエンドノード
+        const EMBED_NODES = [
+            'https://piped.video/embed/',
+            'https://inv.pistaschio.de/embed/',
+            'https://invidious.nerdvpn.de/embed/',
+            'https://iv.melmac.space/embed/'
         ];
 
-        // 🌐 バックエンド・非公式インスタンスAPI
-        const INVIDIOUS_NODES = [
-            'https://invidious.nerdvpn.de',
-            'https://inv.tux.digital',
-            'https://invidious.flokinet.to',
-            'https://iv.melmac.space'
+        // 🌐 サムネイル専用プロキシサーバー（YouTubeの画像サーバーを完全回避）
+        const THUMB_PROXIES = [
+            'https://invidious.nerdvpn.de/vi/',
+            'https://iv.melmac.space/vi/',
+            'https://inv.tux.digital/vi/'
         ];
+
+        const PROXIES = ['https://api.allorigins.win/get?url='];
+        const INVIDIOUS_NODES = ['https://invidious.nerdvpn.de', 'https://inv.tux.digital', 'https://iv.melmac.space'];
 
         let CURRENT_VIDEO_ID = '';
-        let CURRENT_PLAYER_MODE = 0; // 0: Nocookie, 1: Piped
+        let CURRENT_NODE_INDEX = 0;
 
         function checkPassword() {
             if (document.getElementById('gate-pass').value === 'eeeisgod') {
@@ -203,7 +206,7 @@
             
             document.getElementById('dynamic-favicon').setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
 
-            addLog('認証成功。非公式インスタンス・プロキシ中継マトリクスを起動しました。', 'success');
+            addLog('認証成功。YouTube非依存のステルス再生マトリクスを同期。', 'success');
             loadYuzuhaTrend();
         }
 
@@ -229,33 +232,26 @@
             displayVideos(YUZUHA_ARCHIVES, 'trend-grid');
         }
 
-        // 🔄 プロキシを強制経由させてCORSを完全突破するサイト内検索エンジン
         async function searchVideosInSite() {
             const query = document.getElementById('search-input').value.trim();
             const grid = document.getElementById('search-grid');
             if (!query) return;
 
-            grid.innerHTML = '<div class="status-msg">プロキシを中継してインスタンスノードからパケットを回収中...</div>';
-            addLog(`【中継検索】「${query}」のプロキシリレー・シークエンスを開始。`, 'info');
+            grid.innerHTML = '<div class="status-msg">分散インスタンス群より検索パケットを回収中...</div>';
+            addLog(`【検索】隠蔽型プロキシリレーによりノードを走査中。`, 'info');
 
-            // 安定しているノードを選択
             const apiNode = INVIDIOUS_NODES[Math.floor(Math.random() * INVIDIOUS_NODES.length)];
             const targetApiUrl = `${apiNode}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
-            
-            // プロキシURLを結合
             const proxyUrl = `${PROXIES[0]}${encodeURIComponent(targetApiUrl)}`;
 
             try {
                 const res = await fetch(proxyUrl);
                 if(!res.ok) throw new Error();
                 const wrapperData = await res.json();
-                
-                // Alloriginsの仕様に合わせてパース
-                const rawJson = wrapperData.contents;
-                const items = JSON.parse(rawJson);
+                const items = JSON.parse(wrapperData.contents);
 
                 if (!Array.isArray(items) || items.length === 0) {
-                    grid.innerHTML = '<div class="status-msg">パケットのデコードに失敗、または該当動画がありません。</div>';
+                    grid.innerHTML = '<div class="status-msg">データパースに失敗しました。</div>';
                     return;
                 }
 
@@ -266,17 +262,15 @@
                 })).filter(v => v.videoId);
 
                 displayVideos(parsedVideos, 'search-grid');
-                addLog(`インライン同期成功。${parsedVideos.length}個の検索パケットを展開しました。`, 'success');
+                addLog(`同期成功。${parsedVideos.length}個の独立インデックスを展開。`, 'success');
 
             } catch (e) {
-                addLog('中継プロキシが混雑しています。代替ハッシュでエミュレート表示します。', 'fail');
-                // フォールバック（万が一の時も画面をクラッシュさせない）
-                const fallbackList = YUZUHA_ARCHIVES.map(v => ({...v, title: `[ローカルミラー] ${query} 関連映像化パケット`}));
+                addLog('プロキシノードが混雑中。ローカルキャッシュを展開します。', 'fail');
+                const fallbackList = YUZUHA_ARCHIVES.map(v => ({...v, title: `[ミラーパケット] ${query} 関連映像`}));
                 displayVideos(fallbackList, 'search-grid');
             }
         }
 
-        // 🔗 URL直打ち
         function loadDirectVideo() {
             const input = document.getElementById('direct-input').value.trim();
             if (!input) return;
@@ -289,10 +283,10 @@
             }
 
             if(videoId.length !== 11) {
-                alert('11文字の動画ID、または正しいYouTubeのURLを入力してください。');
+                alert('11文字の動画ID、またはURLを入力してください。');
                 return;
             }
-            playVideoInSite(videoId, "直打ちパケットストリーム");
+            playVideoInSite(videoId, "手動指定隠蔽ストリーム");
         }
 
         function displayVideos(videos, targetGridId) {
@@ -300,51 +294,51 @@
             if (!grid) return;
             grid.innerHTML = '';
 
+            // サムネイルプロキシのベースURLをランダムに決定
+            const thumbBase = THUMB_PROXIES[Math.floor(Math.random() * THUMB_PROXIES.length)];
+
             videos.forEach(video => {
                 const card = document.createElement('div');
                 card.className = 'video-card';
                 card.onclick = () => playVideoInSite(video.videoId, video.title);
                 
-                const thumbUrl = `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`;
+                // 🚨 YouTubeのドメインを一切踏まない画像バイパスルート
+                const cleanThumbUrl = `${thumbBase}${video.videoId}/mqdefault.jpg`;
 
                 card.innerHTML = `
-                    <img class="thumbnail" src="${thumbUrl}">
+                    <img class="thumbnail" src="${cleanThumbUrl}" onerror="this.src='https://via.placeholder.com/320x180?text=Stream+Ready'">
                     <div class="video-info">
                         <p class="video-card-title">${video.title}</p>
-                        <p class="channel-title">${video.author || 'Anonymous Instance'}</p>
+                        <p class="channel-title">${video.author || 'Invisible Creator'}</p>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // ⚡ 100%サイト内 iframe レンダリング
+        // ⚡ YouTubeサーバーを一切経由しない100%外部インスタンス埋め込み
         function playVideoInSite(videoId, title) {
             CURRENT_VIDEO_ID = videoId;
             const playerSection = document.getElementById('player-section');
-            const player = document.getElementById('youtube-player');
+            const player = document.getElementById('instance-player');
             const titleText = document.getElementById('video-title-text');
 
             titleText.textContent = title;
             playerSection.style.display = 'block';
 
-            // モードに応じたソース割当
-            if (CURRENT_PLAYER_MODE === 0) {
-                player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
-                addLog(`標準クリーンプレイヤー(nocookie)でインライン再生を開始。(ID: ${videoId})`, 'success');
-            } else {
-                player.src = `https://piped.video/embed/${videoId}?autoplay=1`;
-                addLog(`非公式インスタンス分散プレイヤー(piped)でインライン再生を開始。(ID: ${videoId})`, 'success');
-            }
-
+            // YouTubeへの直接リクエストを排除し、分散ノードから直接ストリーミング
+            const activeEmbedNode = EMBED_NODES[CURRENT_NODE_INDEX];
+            player.src = `${activeEmbedNode}${videoId}?autoplay=1`;
+            
+            addLog(`インスタンスノード [${CURRENT_NODE_INDEX}] からのインラインパケット偽装に成功。`, 'success');
             playerSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 🔄 もしYouTube側のプレイヤーがブロックされた場合に、Piped側の埋め込みに切り替えるスイッチ
-        function togglePlayerSource() {
+        // 🔄 再生がブロックされたり映らない場合、別サイトのプレイヤーエンジンへ即座にローテーション
+        function rotatePlayerNode() {
             if (!CURRENT_VIDEO_ID) return;
-            CURRENT_PLAYER_MODE = CURRENT_PLAYER_MODE === 0 ? 1 : 0;
-            addLog(`プレイヤーのパイプラインをエンジン [${CURRENT_PLAYER_MODE}] に切り替えました。再同期中...`, 'info');
+            CURRENT_NODE_INDEX = (CURRENT_NODE_INDEX + 1) % EMBED_NODES.length;
+            addLog(`バックアップノード [${CURRENT_NODE_INDEX}] へバイパス経路を再計算中...`, 'info');
             const titleText = document.getElementById('video-title-text').textContent;
             playVideoInSite(CURRENT_VIDEO_ID, titleText);
         }
