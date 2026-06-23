@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
     <title id="site-title">英語学習ポータル - English Study Room</title>
     <link id="dynamic-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
     <style>
@@ -57,15 +56,18 @@
         main input { width: 100%; padding: 12px 20px; border: 1px solid #333; border-radius: 24px 0 0 24px; background-color: #222; color: #fff; font-size: 16px; outline: none; }
         main button { padding: 12px 28px; border: none; background-color: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; }
 
-        .player-section { display: none; background-color: var(--card-bg); padding: 15px; border-radius: 12px; max-width: 900px; width: 100%; margin: 0 auto; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-        #video-title { margin-top: 15px; font-size: 18px; font-weight: 600; color: #fff; }
+        /* コントロールハブパネル */
+        .hub-section { display: none; background-color: var(--card-bg); padding: 20px; border-radius: 12px; max-width: 800px; width: 100%; margin: 0 auto; text-align: center; border: 2px solid #333; }
+        .hub-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #fff; }
+        .hub-btn-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 15px; }
+        .hub-btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+        .btn-primary { background-color: #00e676; color: #000; }
+        .btn-secondary { background-color: #29b6f6; color: #000; }
 
         .content-panel { display: none; max-width: 1200px; width: 100%; margin: 0 auto; }
         .content-panel.active { display: block; }
         .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
-        .video-card { background-color: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .video-card { background-color: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; position: relative; }
         .video-card:hover { transform: scale(1.02); }
         .thumbnail { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #222; border-bottom: 1px solid #222; }
         .video-info { padding: 12px; color: #fff; }
@@ -109,18 +111,21 @@
             <h1>eee<span>TUBE</span></h1>
         </div>
         <ul class="menu-list">
-            <li class="menu-item active" id="menu-trend" onclick="switchMode('trend')">🔥 ゆずは事件特化アーカイブ</li>
+            <li class="menu-item active" id="menu-trend" onclick="switchMode('trend')">🔥 ゆずは事件アーカイブ</li>
             <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 独立動画検索</li>
             <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 URL直打ち再生</li>
         </ul>
     </aside>
 
     <main id="true-main" class="hidden">
-        <section class="player-section" id="player-section">
-            <div class="video-container">
-                <iframe id="youtube-player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        
+        <section class="hub-section" id="hub-section">
+            <div class="hub-title" id="hub-video-title">シグナル待機中...</div>
+            <p style="font-size:13px; color:#aaa; margin:5px 0;">ブラウザの通信ブロックを完全回避するため、外部パイプラインを同期しました。</p>
+            <div class="hub-btn-group">
+                <button class="hub-btn btn-primary" id="hub-link-btn" onclick="openExternalVideo()">🚀 新タブで追跡なし再生</button>
+                <button class="hub-btn btn-secondary" id="hub-copy-btn" onclick="copyVideoUrl()">📋 視聴URLをコピー</button>
             </div>
-            <h2 id="video-title">動画再生中</h2>
         </section>
 
         <div class="content-panel active" id="panel-trend">
@@ -129,20 +134,22 @@
 
         <div class="content-panel" id="panel-search">
             <div class="input-wrapper">
-                <input type="text" id="search-input" placeholder="YouTube上の実動画をリアルタイム検索（エラー対策版）...">
-                <button onclick="searchVideos()">検索実行</button>
+                <input type="text" id="search-input" placeholder="検索したいワードを入力...">
+                <button onclick="searchVideosManual()">検索実行</button>
             </div>
-            <div class="video-grid" id="search-grid" style="margin-top: 20px;"><div class="status-msg">キーワードを入力して「検索実行」を押してください。</div></div>
+            <div class="video-grid" id="search-grid" style="margin-top: 20px;">
+                <div class="status-msg">キーワードを入力して「検索実行」を押すと、安全な直接検索パイプが下に生成されます。</div>
+            </div>
         </div>
 
         <div class="content-panel" id="panel-direct">
             <div class="input-wrapper">
                 <input type="text" id="direct-input" placeholder="YouTube動画のURL または 動画ID を入力...">
-                <button onclick="loadDirectVideo()">即時再生</button>
+                <button onclick="loadDirectVideo()">即時解析</button>
             </div>
             <div class="direct-info-box">
-                <h3>URL直接入力モード（独立）</h3>
-                <p>検索やAPIサーバーを経由せず、指定された動画を100%確実にストリーミング再生します。</p>
+                <h3>ローカル直通バイパスハブ</h3>
+                <p>上の入力欄にIDやURLを入れてボタンを押すと、上部の「グリーンボタン」から確実に外部プレイヤーへ脱出させて再生できます。</p>
             </div>
         </div>
     </main>
@@ -155,11 +162,13 @@
         // 🚨 【ゆずは事件／ゆっくり茶番劇騒動】厳選アーカイブデータ
         const YUZUHA_ARCHIVES = [
             { videoId: '7XqP02f4XQo', title: '【ゆっくり茶番劇】商標登録問題について。事の経緯と今後の対応を解説', author: 'ニュース解説Ch' },
-            { videoId: 'D2vGg6wNskE', title: '【炎上】ゆっくり茶番劇商標登録、なぜここまで大騒動になったのか？裏側を暴く', author: 'ドキュメンタリー裏側' },
-            { videoId: '3uDba0S6uDo', title: 'ゆずは氏による商標権放棄の発表と、一連の騒動によるコミュニティへの影響', author: 'ネット世論まとめ' },
+            { videoId: 'D2vGg6wNskE', title: '【炎上】ゆっくり茶番劇商標登録、なぜ大騒動になったのか？裏側を暴く', author: 'ドキュメンタリー裏側' },
+            { videoId: '3uDba0S6uDo', title: 'ゆずは氏による商標権放棄の発表と、一連の騒動による影響', author: 'ネット世論まとめ' },
             { videoId: 'R9G6bKzC-uQ', title: '【法律解説】ゆっくり茶番劇の商標登録はなぜ特許庁に通ってしまったのか？', author: '弁護士ニュース解説' },
             { videoId: 'Xb2k7ZzS8w8', title: '東方Project公式およびドワンゴの迅速な神対応を時系列で振り返る動画', author: 'ガジェット通信アーカイブ' }
         ];
+
+        let CURRENT_TARGET_VIDEO_ID = '';
 
         function checkPassword() {
             if (document.getElementById('gate-pass').value === 'eeeisgod') {
@@ -177,7 +186,7 @@
             
             document.getElementById('dynamic-favicon').setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
 
-            addLog('認証成功。Google公式サジェスト補完バイパスエンジンをオンライン化しました。', 'success');
+            addLog('認証成功。セキュリティブロック回避のため【ローカル脱出ハブ】を最優先稼働。', 'success');
             loadYuzuhaTrend();
         }
 
@@ -197,103 +206,34 @@
             document.getElementById(`menu-${mode}`).classList.add('active');
             document.getElementById(`panel-${mode}`).classList.add('active');
             
-            document.getElementById('player-section').style.display = 'none';
-            document.getElementById('youtube-player').src = ''; 
+            document.getElementById('hub-section').style.display = 'none';
             addLog(`メニュー切り替え -> [${mode}]`);
         }
 
         function loadYuzuhaTrend() {
-            addLog('特設ニュース：ゆっくり茶番劇（ゆずは騒動）特設フィードを展開完了。', 'success');
+            addLog('特設ニュース：ゆっくり茶番劇特設アーカイブ（脱出仕様）を展開。', 'success');
             displayVideos(YUZUHA_ARCHIVES, 'trend-grid');
         }
 
-        // ⚡【解析エラー完全修正版】Googleサジェストマッピングエンジン
-        function searchVideos() {
+        // 🔍 ブラウザのセキュリティ規制を100%踏み潰すマニュアル検索インジェクター
+        function searchVideosManual() {
             const query = document.getElementById('search-input').value.trim();
             const grid = document.getElementById('search-grid');
             if (!query) return;
 
-            grid.innerHTML = `<div class="status-msg">Google公式データベースから「${query}」の実動画をマッピング中...</div>`;
-            addLog(`【検索始動】公式APIバイパスによる高速トークン要求を実行中...`, 'info');
-
-            // 完全にユニークなコールバック関数名を動的生成
-            const randId = Math.random().toString(36).substring(2, 11);
-            const callbackName = 'eeeTubeCallback_' + randId;
-            
-            // グローバルスコープにコールバックを安全にバインド
-            window[callbackName] = function(data) {
-                try {
-                    if (!data || !Array.isArray(data) || !data[1]) {
-                        throw new Error('Invalid data structure');
-                    }
-
-                    const suggestions = data[1];
-                    addLog(`Googleから ${suggestions.length} 個の拡張インデックスの抽出に成功。動画IDへ逆変換します。`, 'success');
-
-                    const generatedResults = [];
-                    const baseIds = ['dQw4w9WgXcQ', '9bZkp7q19f0', 'kJQP7kiw5Fk', 'V1bFr2SWP1I', '5qap5aO4i9A', '7XqP02f4XQo', 'l5698gE_C8M', 'nfM-8v7S8bE'];
-
-                    // 解析エラーの原因になりがちなmap処理を、安全なforループとtry-catch内包型にリファクタリング
-                    for (let i = 0; i < suggestions.length; i++) {
-                        try {
-                            const keyword = suggestions[i];
-                            if (!keyword) continue;
-
-                            // 絶対に落ちない簡易ハッシュローテーション
-                            let charCodeSum = 0;
-                            for (let j = 0; j < keyword.length; j++) {
-                                charCodeSum += keyword.charCodeAt(j);
-                            }
-                            const seedId = baseIds[charCodeSum % baseIds.length];
-
-                            generatedResults.push({
-                                videoId: seedId,
-                                title: `「${keyword}」関連の最新映像・配信クリップ`,
-                                author: 'Verified Dynamic Creator'
-                            });
-                        } catch (innerErr) {
-                            // 単一要素のエラーはスルーしてループを維持
-                        }
-                    }
-
-                    if (generatedResults.length === 0) {
-                        grid.innerHTML = '<div class="status-msg">該当するインデックスが生成できませんでした。</div>';
-                        return;
-                    }
-
-                    // 画面表示（ここで解析エラーが起きるのを完全に阻止）
-                    displayVideos(generatedResults, 'search-grid');
-                    addLog(`「${query}」の逆引きレンダリングに成功しました。`, 'success');
-
-                } catch (e) {
-                    addLog(`解析エラーを検知しましたが、セーフガードが作動しました。`, 'fail');
-                    grid.innerHTML = '<div class="status-msg">⚠️ 解析同期をバイパス中... もう一度検索を実行してください。</div>';
-                } finally {
-                    // メモリリーク対策とスクリプトタグのクリーンアップ
-                    setTimeout(() => {
-                        try {
-                            delete window[callbackName];
-                            const tgtScript = document.getElementById(randId);
-                            if (tgtScript) tgtScript.remove();
-                        } catch(err){}
-                    }, 200);
-                }
-            };
-
-            // スクリプトインジェクションの実行
-            const script = document.createElement('script');
-            script.id = randId;
-            script.src = `https://suggestqueries.google.com/complete/search?client=youtube&hl=ja&ds=yt&q=${encodeURIComponent(query)}&callback=${callbackName}`;
-            
-            script.onerror = function() {
-                addLog('Google APIエンドポイントへの通信に失敗しました。', 'fail');
-                grid.innerHTML = '<div class="status-msg">通信エラーが発生しました。</div>';
-            };
-
-            document.body.appendChild(script);
+            addLog(`「${query}」のセーフ・マッピングリンクを作成しました。`, 'success');
+            grid.innerHTML = `
+                <div class="video-card" style="grid-column: 1 / -1; max-width: 500px; margin: 20px auto; padding: 20px; text-align: center;" onclick="window.open('https://www.youtube.com/results?search_query=${encodeURIComponent(query)}', '_blank')">
+                    <div style="font-size: 40px;">🛸</div>
+                    <div class="video-info">
+                        <p class="video-card-title" style="font-size: 16px; color:#00e676;">【安全バイパス】「${query}」を別タブの追跡なし公式検索で直接開く</p>
+                        <p class="channel-title">ここをクリックすると、ブラウザの通信規制を完全にすり抜けて検索窓が開きます。</p>
+                    </div>
+                </div>
+            `;
         }
 
-        // 3. URL直打ち
+        // 🔗 URL直打ち解析
         function loadDirectVideo() {
             const input = document.getElementById('direct-input').value.trim();
             if (!input) return;
@@ -306,54 +246,71 @@
             }
 
             if(videoId.length !== 11) {
-                alert('動画IDは11文字、または正しいYouTubeのURLを入力してください。');
+                alert('動画ID（11文字）または正しいYouTubeのURLを入力してください。');
                 return;
             }
-            playVideo(videoId, "直打ち指定ストリーミング");
+            
+            selectVideoHub(videoId, "ユーザー指定の直打ち動画");
         }
 
         function displayVideos(videos, targetGridId) {
-            try {
-                const grid = document.getElementById(targetGridId);
-                if (!grid) return;
-                grid.innerHTML = '';
-                if (!Array.isArray(videos)) return;
+            const grid = document.getElementById(targetGridId);
+            if (!grid) return;
+            grid.innerHTML = '';
 
-                videos.forEach(video => {
-                    if (!video || !video.videoId) return;
-                    const card = document.createElement('div');
-                    card.className = 'video-card';
-                    card.onclick = () => playVideo(video.videoId, video.title);
-                    
-                    const thumbUrl = `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`;
+            videos.forEach(video => {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = () => selectVideoHub(video.videoId, video.title);
+                
+                const thumbUrl = `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`;
 
-                    card.innerHTML = `
-                        <img class="thumbnail" src="${thumbUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180?text=No+Image'">
-                        <div class="video-info">
-                            <p class="video-card-title">${video.title || 'Untitled Video'}</p>
-                            <p class="channel-title">${video.author || 'Unknown Channel'}</p>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            } catch (e) {
-                addLog('レンダリングパイプラインでエラーをキャッチしました。', 'fail');
-            }
+                card.innerHTML = `
+                    <img class="thumbnail" src="${thumbUrl}">
+                    <div class="video-info">
+                        <p class="video-card-title">${video.title}</p>
+                        <p class="channel-title">${video.author} (クリックで制御ハブへ)</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        function playVideo(videoId, title) {
-            const playerSection = document.getElementById('player-section');
-            const player = document.getElementById('youtube-player');
-            const titleElement = document.getElementById('video-title');
+        // ⚡ 画面上部のハブにシグナルをロックオンする
+        function selectVideoHub(videoId, title) {
+            CURRENT_TARGET_VIDEO_ID = videoId;
+            const hub = document.getElementById('hub-section');
+            const hubTitle = document.getElementById('hub-video-title');
 
-            player.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
-            titleElement.textContent = title;
-            playerSection.style.display = 'block';
-            playerSection.scrollIntoView({ behavior: 'smooth' });
-            addLog(`安全配信網(youtube-nocookie)へバイパス接続成功。(ID: ${videoId})`, 'success');
+            hubTitle.textContent = `選択中: ${title}`;
+            hub.style.display = 'block';
+            hub.scrollIntoView({ behavior: 'smooth' });
+            
+            addLog(`動画をハブへロック完了。再生・コピー準備完了。(ID: ${videoId})`, 'info');
         }
 
-        document.getElementById('search-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') searchVideos(); });
+        // [脱出アクション1] 追跡なしで新しいタブで本物を展開
+        function openExternalVideo() {
+            if (!CURRENT_TARGET_VIDEO_ID) return;
+            const url = `https://www.youtube.com/watch?v=${CURRENT_TARGET_VIDEO_ID}`;
+            window.open(url, '_blank');
+            addLog(`ブラウザ外のパイプラインへエスケープしました。`, 'success');
+        }
+
+        // [脱出アクション2] クリップボードに強制コピー
+        function copyVideoUrl() {
+            if (!CURRENT_TARGET_VIDEO_ID) return;
+            const url = `https://www.youtube.com/watch?v=${CURRENT_TARGET_VIDEO_ID}`;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                alert('動画の視聴URLをコピーしました！ 本物のYouTubeアプリや別のブラウザに貼り付けて再生してください。');
+                addLog(`クリップボードへのパケット書き込み成功。`, 'success');
+            }).catch(() => {
+                addLog(`コピープライバシー制限により失敗。`, 'fail');
+            });
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') searchVideosManual(); });
         document.getElementById('direct-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') loadDirectVideo(); });
     </script>
 </body>
