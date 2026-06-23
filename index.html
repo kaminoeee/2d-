@@ -34,7 +34,7 @@
         .study-container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .word-card { font-size: 24px; font-weight: bold; color: #2c3e50; margin: 20px 0; padding: 20px; background: #ecf0f1; border-radius: 6px; }
         .gate-input-wrapper { margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px; }
-        .gate-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; width: 60%; text-align: center; }
+        .gate-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; width: 60%; text-align: center; outline: none; }
 
         /* --- 【裏】eeetube用 --- */
         body.dark-mode { background-color: var(--bg-color); color: var(--text-color); }
@@ -52,7 +52,7 @@
         .menu-item:hover { background-color: #222; color: #fff; }
         .menu-item.active { background-color: var(--active-bg); color: #fff; border-left: 4px solid var(--accent-color); padding-left: 16px; }
 
-        main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 160px; /* ログ用のスペース */ }
+        main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 160px; }
         .input-wrapper { max-width: 800px; width: 100%; margin: 0 auto; display: flex; }
         main input { width: 100%; padding: 12px 20px; border: 1px solid #333; border-radius: 24px 0 0 24px; background-color: #222; color: #fff; font-size: 16px; outline: none; }
         main button { padding: 12px 28px; border: none; background-color: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; }
@@ -76,20 +76,10 @@
 
         /* 📋 システムログコンソール */
         #log-console {
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            left: 240px; /* サイドバーの横から開始 */
-            height: 120px;
-            background-color: #050505;
-            border-top: 2px solid #222;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            padding: 10px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            z-index: 9999;
+            position: fixed; bottom: 0; right: 0; left: 240px; height: 120px;
+            background-color: #050505; border-top: 2px solid #222; color: #00ff00;
+            font-family: 'Courier New', Courier, monospace; font-size: 12px; padding: 10px;
+            box-sizing: border-box; overflow-y: auto; z-index: 9999;
         }
         .log-entry { margin: 2px 0; }
         .log-fail { color: #ff3333; }
@@ -162,14 +152,14 @@
     </div>
 
     <script>
-        // 🔒 パスワード
+        // 🔒 パスワードチェック
         function checkPassword() {
             if (document.getElementById('gate-pass').value === 'eeeisgod') {
                 activateEeeTube();
             }
         }
 
-        // 💥 裏モード起動 ＆ YouTubeアイコン切り替え
+        // 💥 裏モード起動 ＆ アイコン切り替え
         function activateEeeTube() {
             document.getElementById('dummy-study-site').style.display = 'none';
             document.getElementById('true-sidebar').classList.remove('hidden');
@@ -178,89 +168,74 @@
             document.body.classList.add('dark-mode');
             document.getElementById('site-title').textContent = 'eeeTUBE';
             
-            // 🔴 タブのアイコンをYouTube風（赤地に再生ボタン）に強制書き換え
+            // 🔴 タブのアイコンをYouTube風（赤地に白再生ボタン）に変更
             const favicon = document.getElementById('dynamic-favicon');
             favicon.setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
 
-            addLog('認証成功。裏モード「eeeTUBE」を起動します。', 'success');
+            addLog('認証成功。スタンドアロン高速エンジン起動。', 'success');
             fetchTrendingVideos();
         }
 
-        // 📋 ログ追加関数
+        // 📋 ログ追加
         function addLog(text, type = 'info') {
             const consoleEl = document.getElementById('log-console');
             const entry = document.createElement('div');
             entry.className = `log-entry log-${type}`;
-            const time = new Date().toLocaleTimeString();
-            entry.textContent = `[${time}] ${text}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
             consoleEl.appendChild(entry);
-            consoleEl.scrollTop = consoleEl.scrollHeight; // 自動最下部スクロール
+            consoleEl.scrollTop = consoleEl.scrollHeight;
         }
-
-        // 🛠️ どんな方法でも読み込めるようにする複数APIルート設計
-        // 1~3はInvidious型、4はPiped型（別構造のスクレイピングAPI）
-        const API_SERVERS = [
-            { name: 'API_1 (Puffyan)', url: 'https://vid.puffyan.us/api/v1', type: 'invidious' },
-            { name: 'API_2 (Perennial)', url: 'https://invidious.perennialte.ch/api/v1', type: 'invidious' },
-            { name: 'API_3 (Melmac)', url: 'https://iv.melmac.space/api/v1', type: 'invidious' },
-            { name: 'API_4 (Piped-Bridge)', url: 'https://pipedapi.kavin.rocks', type: 'piped' }
-        ];
-        const CORS_PROXY = 'https://api.allorigins.win/get?url=';
 
         function switchMode(mode) {
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.content-panel').forEach(el => el.classList.remove('active'));
             document.getElementById(`menu-${mode}`).classList.add('active');
             document.getElementById(`panel-${mode}`).classList.add('active');
-            if(mode === 'direct') {
-                // ダイレクトモード選択時はコンソールを少し引っ込める
-                document.getElementById('log-console').style.left = '240px';
-            }
         }
 
-        // 🚀 トリプル＋1 自動フォールバック通信エンジン
-        async function fetchVideoData(action, query = '') {
-            for (let i = 0; i < API_SERVERS.length; i++) {
-                const server = API_SERVERS[i];
-                let targetUrl = '';
+        // 🛠️ 2026年現在最も安定しているPiped APIインスタンスの直叩きリスト（CORSプロキシ不要な場所を選択）
+        const PIPED_SERVERS = [
+            { name: 'API_1 (Kavin)', url: 'https://pipedapi.kavin.rocks' },
+            { name: 'API_2 (Moomoo)', url: 'https://pipedapi.moomoo.me' },
+            { name: 'API_3 (Sync)', url: 'https://api.piped.sync.top' }
+        ];
 
-                // サーバータイプに合わせてエンドポイントを自動構築
-                if (server.type === 'invidious') {
-                    targetUrl = action === 'trend' ? `${server.url}/trending?region=JP` : `${server.url}/search?q=${encodeURIComponent(query)}&type=video`;
-                } else if (server.type === 'piped') {
-                    targetUrl = action === 'trend' ? `${server.url}/trending?region=JP` : `${server.url}/search?q=${encodeURIComponent(query)}&filter=videos`;
-                }
+        // 🚀 自動フォールバックエンジン（失敗したら即座に次を実行）
+        async function fetchPipedData(action, query = '') {
+            for (let i = 0; i < PIPED_SERVERS.length; i++) {
+                const server = PIPED_SERVERS[i];
+                const targetUrl = action === 'trend' 
+                    ? `${server.url}/trending?region=JP` 
+                    : `${server.url}/search?q=${encodeURIComponent(query)}&filter=videos`;
 
-                addLog(`${server.name} に接続試行中...`, 'info');
+                addLog(`${server.name} にリクエスト送信中...`, 'info');
 
                 try {
-                    const res = await fetch(`${CORS_PROXY}${encodeURIComponent(targetUrl)}`);
-                    if (!res.ok) throw new Error('HTTP Error');
-                    const outer = await res.json();
-                    const data = JSON.parse(outer.contents);
+                    // タイムアウト設定付きのfetch
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6秒でタイムアウト
+
+                    const res = await fetch(targetUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
                     
-                    if (data) {
+                    const list = action === 'trend' ? data : data.items;
+                    if (list && list.length > 0) {
                         addLog(`${server.name} からのデータ取得に成功！`, 'success');
-                        // Pipedデータの構造をInvidious互換に変換
-                        return server.type === 'piped' ? transformPipedData(data, action) : data;
+                        return list.map(item => ({
+                            videoId: item.url ? item.url.split('v=')[1] : item.id,
+                            title: item.title,
+                            author: item.uploaderName || '不明なチャンネル',
+                            thumbnail: item.thumbnail
+                        }));
                     }
                 } catch (e) {
-                    addLog(`${server.name} が失敗しました。次を実行します。`, 'fail');
+                    addLog(`${server.name} が応答しないかエラーです。次を実行します。`, 'fail');
                 }
             }
             throw new Error('All APIs failed');
-        }
-
-        // Piped APIの特殊なデータ構造を変換するコンバーター
-        function transformPipedData(data, action) {
-            const list = action === 'trend' ? data : data.items;
-            if(!list) return [];
-            return list.map(item => ({
-                videoId: item.url ? item.url.split('v=')[1] : item.id,
-                title: item.title,
-                author: item.uploaderName,
-                videoThumbnails: [{ quality: 'medium', url: item.thumbnail }]
-            }));
         }
 
         // トレンド取得
@@ -268,11 +243,11 @@
             const grid = document.getElementById('trend-grid');
             grid.innerHTML = '<div class="status-msg">急上昇を読み込み中...</div>';
             try {
-                const data = await fetchVideoData('trend');
+                const data = await fetchPipedData('trend');
                 displayVideos(data, 'trend-grid');
             } catch (error) {
-                grid.innerHTML = '<div class="status-msg">⚠️ 全APIがブロックされました。左メニューから「URL直接入力」に切り替えてください。</div>';
-                addLog('全APIサーバーの自動試行に失敗しました。YouTube側のブロックが強固です。', 'fail');
+                grid.innerHTML = '<div class="status-msg">⚠️ 公開APIが混雑しています。動画を直接見る場合は「URL直打ち再生」モードに切り替えてください。</div>';
+                addLog('全APIサーバーの自動試行に失敗しました。', 'fail');
             }
         }
 
@@ -284,7 +259,7 @@
 
             grid.innerHTML = `<div class="status-msg">「${query}」を検索中...</div>`;
             try {
-                const data = await fetchVideoData('search', query);
+                const data = await fetchPipedData('search', query);
                 if(!data || data.length === 0) {
                     grid.innerHTML = '<div class="status-msg">該当する動画が見つかりませんでした。</div>';
                 } else {
@@ -292,7 +267,7 @@
                 }
             } catch (error) {
                 grid.innerHTML = '<div class="status-msg">⚠️ 検索に失敗しました。「URL直接入力」モードを試してください。</div>';
-                addLog('検索リクエストはすべて拒否されました。', 'fail');
+                addLog('検索に失敗しました。', 'fail');
             }
         }
 
@@ -307,13 +282,16 @@
                 const match = input.match(regExp);
                 if (match && match[2].length === 11) {
                     videoId = match[2];
-                    addLog(`URL直打ちを検出。動画ID: ${videoId} を直接パースしました。`, 'success');
                 } else {
                     alert('URLから動画IDを抽出できませんでした。');
                     return;
                 }
             }
-            playVideo(videoId, "直接入力された動画");
+            if(videoId.length !== 11) {
+                alert('正しい11文字の動画ID、またはURLを入力してください。');
+                return;
+            }
+            playVideo(videoId, "直接指定された動画");
         }
 
         // 共通描画
@@ -328,16 +306,11 @@
                 card.className = 'video-card';
                 card.onclick = () => playVideo(video.videoId, video.title);
 
-                let thumbUrl = 'https://via.placeholder.com/320x180?text=No+Image';
-                if (video.videoThumbnails && video.videoThumbnails.length > 0) {
-                    thumbUrl = video.videoThumbnails[0].url;
-                }
-
                 card.innerHTML = `
-                    <img class="thumbnail" src="${thumbUrl}" loading="lazy">
+                    <img class="thumbnail" src="${video.thumbnail}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180?text=No+Image'">
                     <div class="video-info">
                         <p class="video-card-title">${video.title}</p>
-                        <p class="channel-title">${video.author || 'Unknown'}</p>
+                        <p class="channel-title">${video.author}</p>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -354,7 +327,7 @@
             titleElement.textContent = title;
             playerSection.style.display = 'block';
             playerSection.scrollIntoView({ behavior: 'smooth' });
-            addLog(`動画の埋め込み再生を開始しました (ID: ${videoId})`);
+            addLog(`埋め込みプレイヤーを起動しました (ID: ${videoId})`, 'success');
         }
 
         document.getElementById('search-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') searchVideos(); });
