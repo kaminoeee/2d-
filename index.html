@@ -1,74 +1,291 @@
-// APIキーは不要です！代わりに公開されているInvidiousのインスタンスURLを使用します
-const BASE_URL = 'https://invidious.perennialte.ch/api/v1'; // 調子が悪い時は別のインスタンスURLに変更可能
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eeetube - Unofficial YouTube Instance</title>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --text-color: #ffffff;
+            --accent-color: #ff0000;
+            --card-bg: #1f1f1f;
+        }
 
-window.onload = () => {
-    fetchTrendingVideos();
-};
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
 
-// トレンド動画の取得
-async function fetchTrendingVideos() {
-    // Invidiousのトレンド取得API
-    const url = `${BASE_URL}/trending?region=JP`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        // Invidiousのデータ構造に合わせてマッピング
-        displayVideos(data);
-    } catch (error) {
-        console.error('エラーが発生しました:', error);
-    }
-}
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+        }
 
-// 動画検索
-async function searchVideos() {
-    const query = document.getElementById('search-input').value;
-    if (!query) return;
+        h1 {
+            color: var(--accent-color);
+            margin: 0;
+            cursor: pointer;
+            font-size: 28px;
+            letter-spacing: -1px;
+        }
 
-    // Invidiousの検索API
-    const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&type=video`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        displayVideos(data);
-    } catch (error) {
-        console.error('エラーが発生しました:', error);
-    }
-}
+        .search-box {
+            display: flex;
+            flex-grow: 0.5;
+        }
 
-// 動画一覧を画面に描画
-function displayVideos(videos) {
-    const grid = document.getElementById('video-grid');
-    grid.innerHTML = '';
+        input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #333;
+            border-radius: 20px 0 0 20px;
+            background-color: #222;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
 
-    videos.forEach(video => {
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.onclick = () => playVideo(video.videoId, video.title);
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #333;
+            color: white;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
 
-        // サムネイルもInvidiousがキャッシュしている画像などを利用可能
-        const thumbnail = video.videoThumbnails ? video.videoThumbnails.find(t => t.quality === 'medium').url : '';
+        button:hover {
+            background-color: #444;
+        }
 
-        card.innerHTML = `
-            <img class="thumbnail" src="${thumbnail}" alt="${video.title}">
-            <div class="video-info">
-                <p class="video-card-title">${video.title}</p>
-                <p class="channel-title">${video.author}</p>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        /* プレイヤーエリア */
+        .player-section {
+            display: none;
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #video-title {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* 動画グリッド */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .video-card:hover {
+            transform: scale(1.02);
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+        }
+
+        .video-info {
+            padding: 12px;
+        }
+
+        .video-card-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .channel-title {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .status-msg {
+            text-align: center;
+            color: #aaa;
+            grid-column: 1 / -1;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="location.reload()">eeetube</h1>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="動画を検索...">
+            <button onclick="searchVideos()">検索</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="player-section" id="player-section">
+            <div class="video-container">
+                <iframe id="youtube-player" src="" allowfullscreen></iframe>
             </div>
-        `;
-        grid.appendChild(card);
-    });
-}
+            <h2 id="video-title">動画タイトル</h2>
+        </section>
 
-// 動画を再生（再生はYouTube公式の埋め込みでも、Invidiousの再生ソースでもOK）
-function playVideo(videoId, title) {
-    const playerSection = document.getElementById('player-section');
-    const player = document.getElementById('youtube-player');
-    const titleElement = document.getElementById('video-title');
+        <section class="video-grid" id="video-grid">
+            <div class="status-msg" id="status-text">読み込み中...</div>
+        </section>
+    </main>
 
-    // 広告を減らしたい場合は公式埋め込みではなくInvidiousの埋め込みURL（例: https://invidious.perennialte.ch/embed/${videoId}）にすることも可能
-    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    titleElement.textContent = title;
-    playerSection.style.display = 'block';
+    <script>
+        // APIキー不要！パブリックなInvidiousインスタンスのURLを使用します
+        const BASE_URL = 'https://invidious.perennialte.ch/api/v1';
 
-    playerSection.scrollIntoView({ behavior: 'smooth' });
-}
+        // 起動時に日本のトレンド動画を取得
+        window.onload = () => {
+            fetchTrendingVideos();
+        };
+
+        // トレンド取得
+        async function fetchTrendingVideos() {
+            showStatus('日本の急上昇を読み込み中...');
+            const url = `${BASE_URL}/trending?region=JP`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('サーバーエラー');
+                const data = await response.json();
+                displayVideos(data);
+            } catch (error) {
+                console.error(error);
+                showStatus('データの取得に失敗しました。時間をおいて試すか、検索をお試しください。');
+            }
+        }
+
+        // 検索機能
+        async function searchVideos() {
+            const query = document.getElementById('search-input').value;
+            if (!query) return;
+
+            showStatus(`「${query}」の検索結果を読み込み中...`);
+            const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&type=video`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('サーバーエラー');
+                const data = await response.json();
+                if(data.length === 0) {
+                    showStatus('該当する動画が見つかりませんでした。');
+                } else {
+                    displayVideos(data);
+                }
+            } catch (error) {
+                console.error(error);
+                showStatus('検索中にエラーが発生しました。');
+            }
+        }
+
+        // 画面に動画リストを描画
+        function displayVideos(videos) {
+            const grid = document.getElementById('video-grid');
+            grid.innerHTML = '';
+
+            videos.forEach(video => {
+                // 必要なデータが揃っているかチェック
+                if (!video.videoId) return;
+
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = () => playVideo(video.videoId, video.title);
+
+                // サムネイル画像の選定
+                let thumbUrl = 'https://via.placeholder.com/320x180?text=No+Image';
+                if (video.videoThumbnails && video.videoThumbnails.length > 0) {
+                    const mediumThumb = video.videoThumbnails.find(t => t.quality === 'medium') || video.videoThumbnails[0];
+                    thumbUrl = mediumThumb.url;
+                }
+
+                card.innerHTML = `
+                    <img class="thumbnail" src="${thumbUrl}" loading="lazy" alt="${video.title}">
+                    <div class="video-info">
+                        <p class="video-card-title">${video.title}</p>
+                        <p class="channel-title">${video.author || '不明なチャンネル'}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 動画再生処理
+        function playVideo(videoId, title) {
+            const playerSection = document.getElementById('player-section');
+            const player = document.getElementById('youtube-player');
+            const titleElement = document.getElementById('video-title');
+
+            // YouTube公式のクリーンな埋め込みプレイヤーを使用
+            player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            titleElement.textContent = title;
+            playerSection.style.display = 'block';
+
+            // プレイヤー位置までスムーズにスクロール
+            playerSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 状態メッセージ表示用
+        function showStatus(msg) {
+            const grid = document.getElementById('video-grid');
+            grid.innerHTML = `<div class="status-msg">${msg}</div>`;
+        }
+
+        // Enterキーでの検索に対応
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchVideos();
+            }
+        });
+    </script>
+</body>
+</html>
