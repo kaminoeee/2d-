@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT・プログラミング学習ポータル</title>
+    <title id="site-title">IT・プログラミング学習ポータル</title>
+    <link id="site-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232b6cb0'><path d='M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM3.62 10.42l8.38 4.57 8.38-4.57L12 6.06l-8.38 4.36zM19 13.52l-7 3.82-7-3.82V17l7 3.82 7-3.82v-3.48z'/></svg>">
+    
     <style>
         :root {
             --bg-color: #f4f6f9;
@@ -142,9 +144,8 @@
             position: relative;
             padding-top: 56.25%;
             margin: 0 auto;
-            display: none;
             background-color: #000;
-            border-radius: 8px;
+            border-radius: 8px 8px 0 0;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
@@ -153,6 +154,54 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             border: none;
+        }
+
+        /* ダウンロードパネルのスタイル */
+        .download-panel {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 30px auto;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 15px;
+            box-sizing: border-box;
+            text-align: left;
+        }
+
+        .download-panel h4 {
+            margin: 0 0 10px 0;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .dl-btn {
+            padding: 8px 15px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .dl-btn.ss { background-color: #00b0ff; }
+        .dl-btn.y2 { background-color: #ff0050; }
+        .dl-btn.dir { background-color: #28a745; }
+        .dl-btn:hover { opacity: 0.9; }
+
+        #player-container {
+            display: none; /* 初期状態は非表示 */
         }
     </style>
 </head>
@@ -195,8 +244,19 @@
                 <button onclick="playVideo()">再生</button>
             </div>
 
-            <div class="video-wrapper" id="videoWrapper">
-                <iframe id="player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <div id="player-container">
+                <div class="video-wrapper">
+                    <iframe id="player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                
+                <div class="download-panel">
+                    <h4>📥 動画ダウンロード支援リンク (外部サイトへ転送)</h4>
+                    <div class="download-buttons">
+                        <a id="btn-ss" href="#" target="_blank" class="dl-btn ss">SaveFrom.net で開く</a>
+                        <a id="btn-y2" href="#" target="_blank" class="dl-btn y2">Y2Mate で開く</a>
+                        <a id="btn-dir" href="#" target="_blank" class="dl-btn dir">Cobalt.tools（推奨ツール）を開く</a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -207,31 +267,38 @@
         function checkPassword() {
             const codeInput = document.getElementById('accessCode').value.trim();
             
-            // パスワードが「eeeisgod」になった瞬間に切り替え
             if (codeInput === 'eeeisgod') {
                 document.getElementById('study-space').style.display = 'none';
                 document.getElementById('eeetube-space').style.display = 'block';
                 
-                // デザインをダークモード（eeetube仕様）に変形
+                // デザインをダークモードに変形
                 document.body.classList.add('dark-mode');
+                
+                // 1. ページタイトルとヘッダーを「eeetube」に変更
+                document.title = "eeetube";
                 document.getElementById('site-logo').innerText = 'eeetube';
                 document.getElementById('site-logo').style.color = '#ff0000';
                 document.getElementById('status-tag').innerText = '管理者モード（シークレット）';
                 document.getElementById('status-tag').style.color = '#ff3333';
                 
+                // 2. サイトアイコン(Favicon)をYouTube仕様に変更 (赤地の再生ボタンSVG)
+                const ytFavicon = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff0000'><path d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z'/></svg>";
+                document.getElementById('site-favicon').setAttribute('href', ytFavicon);
+                
                 document.getElementById('youtubeUrl').focus();
             }
         }
 
-        // 動画再生ロジック
+        // 動画再生＆ダウンロードリンク生成ロジック
         function playVideo() {
             const urlInput = document.getElementById('youtubeUrl').value.trim();
             const player = document.getElementById('player');
-            const wrapper = document.getElementById('videoWrapper');
+            const container = document.getElementById('player-container');
             
             if (!urlInput) { alert('URLを入力してください。'); return; }
 
             let videoId = '';
+
             try {
                 if (urlInput.includes('youtu.be/')) {
                     videoId = urlInput.split('youtu.be/')[1].split(/[?#]/)[0];
@@ -247,8 +314,15 @@
                 }
 
                 if (videoId && videoId.length === 11) {
+                    // 埋め込みプレイヤーのセット
                     player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-                    wrapper.style.display = 'block';
+                    container.style.display = 'block';
+
+                    // 3. 各種ダウンロード支援用リンクを裏で自動生成してボタンに付与
+                    document.getElementById('btn-ss').href = `https://ssyoutube.com/watch?v=${videoId}`;
+                    document.getElementById('btn-y2').href = `https://www.youtubepp.com/watch?v=${videoId}`;
+                    document.getElementById('btn-dir').href = `https://cobalt.tools/`; // 遷移後に貼る用
+
                 } else {
                     alert('有効なYouTube URLではありません。');
                 }
