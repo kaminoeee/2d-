@@ -1,350 +1,261 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="site-title">英語学習ポータル - English Study Room</title>
-    <link id="dynamic-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+    <title>IT・プログラミング学習ポータル</title>
     <style>
         :root {
-            --bg-color: #0f0f0f;
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary-color: #2b6cb0;
+            --accent-color: #dd6b20;
+        }
+        
+        /* 裏モード用のスタイル（ダークテーマ） */
+        body.dark-mode {
+            --bg-color: #121212;
+            --card-bg: #1a1a1a;
             --text-color: #ffffff;
-            --accent-color: #ff0000;
-            --sidebar-bg: #161616;
-            --card-bg: #1f1f1f;
-            --active-bg: #333333;
+            --primary-color: #ff0000;
+            --accent-color: #ff3333;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            color: #333333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             display: flex;
-            height: 100vh;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        body.dark-mode header {
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* --- 表の顔：学習サイトのスタイル --- */
+        #study-space {
+            display: block;
+        }
+
+        .welcome-box {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .card h3 { margin-top: 0; }
+
+        /* 隠しパスワード入力エリア */
+        .secret-trigger {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .secret-trigger input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 200px;
+            text-align: center;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* --- 裏の顔：eeetubeのスタイル --- */
+        #eeetube-space {
+            display: none;
+            text-align: center;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 600px;
+            margin: 30px auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: #222;
+            color: white;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 14px 28px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .search-box button:hover { background-color: var(--accent-color); }
+
+        .video-wrapper {
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            padding-top: 56.25%;
+            margin: 0 auto;
+            display: none;
+            background-color: #000;
+            border-radius: 8px;
             overflow: hidden;
-            transition: background 0.3s, color 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .hidden { display: none !important; }
-
-        /* --- 【表】学習サイト用 --- */
-        #dummy-study-site { width: 100vw; padding: 40px 20px; box-sizing: border-box; overflow-y: auto; text-align: center; }
-        .study-container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .word-card { font-size: 24px; font-weight: bold; color: #2c3e50; margin: 20px 0; padding: 20px; background: #ecf0f1; border-radius: 6px; }
-        .gate-input-wrapper { margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px; }
-        .gate-input { padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; width: 60%; text-align: center; outline: none; }
-
-        /* --- 【裏】eeeTUBE用 --- */
-        body.dark-mode { background-color: var(--bg-color); color: var(--text-color); }
-        aside { width: 240px; background-color: var(--sidebar-bg); display: flex; flex-direction: column; border-right: 1px solid #222; flex-shrink: 0; }
-        .logo-area { padding: 20px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 8px; }
-        
-        .yt-icon { width: 32px; height: 22px; background-color: var(--accent-color); border-radius: 6px; position: relative; display: inline-block; }
-        .yt-icon::after { content: ''; position: absolute; border-left: 8px solid white; border-top: 5px solid transparent; border-bottom: 5px solid transparent; top: 6px; left: 13px; }
-        
-        .logo-area h1 { color: #fff; margin: 0; cursor: pointer; font-size: 22px; letter-spacing: -1px; font-weight: bold; }
-        .logo-area span { color: var(--accent-color); }
-        .menu-list { list-style: none; padding: 10px 0; margin: 0; }
-        .menu-item { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; font-weight: 600; transition: background 0.2s; color: #aaa; }
-        .menu-item:hover { background-color: #222; color: #fff; }
-        .menu-item.active { background-color: var(--active-bg); color: #fff; border-left: 4px solid var(--accent-color); padding-left: 16px; }
-
-        main { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; padding-bottom: 160px; }
-        .input-wrapper { max-width: 800px; width: 100%; margin: 0 auto; display: flex; }
-        main input { width: 100%; padding: 12px 20px; border: 1px solid #333; border-radius: 24px 0 0 24px; background-color: #222; color: #fff; font-size: 16px; outline: none; }
-        main button { padding: 12px 28px; border: none; background-color: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-size: 16px; font-weight: bold; flex-shrink: 0; }
-
-        .content-panel { display: none; max-width: 1200px; width: 100%; margin: 0 auto; }
-        .content-panel.active { display: block; }
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
-        .video-card { background-color: var(--card-bg); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
-        .video-card:hover { transform: scale(1.02); }
-        .thumbnail { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #222; border-bottom: 1px solid #222; }
-        .video-info { padding: 12px; color: #fff; }
-        .video-card-title { font-size: 13px; font-weight: bold; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
-        .channel-title { font-size: 11px; color: #aaa; }
-        .status-msg { text-align: center; color: #aaa; padding: 40px; font-size: 14px; }
-        .direct-info-box { max-width: 800px; margin: 20px auto 0 auto; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid #222; }
-        .direct-info-box h3 { margin-top: 0; font-size: 15px; color: #fff; }
-        .direct-info-box p { margin-bottom: 0; font-size: 13px; color: #aaa; line-height: 1.5; }
-
-        .player-section { display: none; background-color: var(--card-bg); padding: 15px; border-radius: 12px; max-width: 800px; width: 100%; margin: 20px auto 0 auto; border: 1px solid #333; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; }
-        .video-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; outline: none; }
-        #video-title { margin-top: 15px; font-size: 16px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; }
-        
-        .switch-player-btn { font-size: 12px; background: #333; color: #ccc; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-        .switch-player-btn:hover { background: #444; color: #fff; }
-
-        /* 📋 システムログコンソール */
-        #log-console {
-            position: fixed; bottom: 0; right: 0; left: 240px; height: 120px;
-            background-color: #050505; border-top: 2px solid #222; color: #00ff00;
-            font-family: 'Courier New', Courier, monospace; font-size: 12px; padding: 10px;
-            box-sizing: border-box; overflow-y: auto; z-index: 9999;
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: none;
         }
-        .log-entry { margin: 2px 0; }
-        .log-fail { color: #ff3333; }
-        .log-success { color: #33ff33; }
-        .log-info { color: #33b5ff; }
     </style>
 </head>
 <body>
 
-    <!-- ================= 表：ダミー学習サイト ================= -->
-    <div id="dummy-study-site">
-        <div class="study-container">
-            <h2>毎日英単語トレーニング</h2>
-            <p>本日の重要ワード</p>
-            <div class="word-card">
-                persistence <br>
-                <span style="font-size: 16px; color:#7f8c8d; font-weight: normal;">【名】粘り強さ、不屈の努力</span>
-            </div>
-            <div class="gate-input-wrapper">
-                <input type="password" class="gate-input" id="gate-pass" placeholder="Enter password..." oninput="checkPassword()">
-            </div>
-        </div>
-    </div>
+    <header>
+        <div class="logo" id="site-logo">EduPortal - オンライン学習ナビ</div>
+        <div id="status-tag" style="font-size: 14px; color: #666;">ゲスト受講中</div>
+    </header>
 
-    <!-- ================= 裏：eeeTUBE ================= -->
-    <aside id="true-sidebar" class="hidden">
-        <div class="logo-area">
-            <div class="yt-icon"></div>
-            <h1>eee<span>TUBE</span></h1>
-        </div>
-        <ul class="menu-list">
-            <li class="menu-item active" id="menu-trend" onclick="switchMode('trend')">🔥 ゆずは事件アーカイブ</li>
-            <li class="menu-item" id="menu-search" onclick="switchMode('search')">🔍 独立動画エミュレータ</li>
-            <li class="menu-item" id="menu-direct" onclick="switchMode('direct')">🔗 ID直打ちダイレクトストリーム</li>
-        </ul>
-    </aside>
-
-    <main id="true-main" class="hidden">
+    <div class="container">
         
-        <!-- ゆずは事件 特設フィード -->
-        <div class="content-panel active" id="panel-trend">
-            <div class="video-grid" id="trend-grid"></div>
-        </div>
+        <div id="study-space">
+            <div class="welcome-box">
+                <h2>プログラミング＆IT基礎知識の自習スペースへようこそ</h2>
+                <p>このポータルでは、Web開発、データサイエンス、ネットワーク基礎などの学習ロードマップを提供しています。下の講義ナビゲーションからカリキュラムを選択して学習を開始してください。</p>
+            </div>
 
-        <!-- 完結型検索パネル -->
-        <div class="content-panel" id="panel-search">
-            <div class="input-wrapper">
-                <input type="text" id="search-input" placeholder="キーワードを入力（規制環境のためローカルミラー展開）...">
-                <button onclick="simulateSearch()">エミュレート検索</button>
+            <div class="card">
+                <h3>第1章：HTML5/CSS3によるモダンWebデザイン</h3>
+                <p>セマンティックなマークアップ、Flexboxを用いたレスポンシブなレイアウト構築の基本を学びます。</p>
             </div>
-            <div class="video-grid" id="search-grid" style="margin-top: 20px;">
-                <div class="status-msg">ネットワーク規制を回避するため、安全なローカルキャッシュインデックスから動画を展開します。</div>
+            <div class="card">
+                <h3>第2章：JavaScript（ES6+）非同期処理とDOM操作</h3>
+                <p>Fetch APIを使用したデータの取得、Promiseやasync/awaitを活用した高度なフロントエンド実装を習得します。</p>
             </div>
-        </div>
 
-        <!-- URL直打ちパネル -->
-        <div class="content-panel" id="panel-direct">
-            <div class="input-wrapper">
-                <input type="text" id="direct-input" placeholder="YouTube動画のURL または 動画ID(11文字) を入力...">
-                <button onclick="loadDirectVideo()">ダイレクト再生起動</button>
-            </div>
-            <div class="direct-info-box">
-                <h3>JavaScript Fetch不使用型ストリーミング</h3>
-                <p>ブラウザの通信監視（Fetch/XHR/CORS制限）を無効化するため、APIリクエストを完全にバイパスし、動画の生データエンドポイントをビデオタグへ直接インジェクションします。</p>
+            <div class="secret-trigger">
+                <p style="font-size: 13px; color: #777; margin-bottom: 8px;">限定公開カリキュラムのコードをお持ちの方は、以下に入力してください</p>
+                <input type="password" id="accessCode" placeholder="受講コードを入力" oninput="checkPassword()">
             </div>
         </div>
 
-        <!-- 📺 プレイヤーセクション -->
-        <section class="player-section" id="player-section">
-            <div class="video-container">
-                <video id="native-core-player" controls autoplay preload="auto"></video>
+        <div id="eeetube-space">
+            <h1 style="color: #ff0000; font-size: 32px; margin-bottom: 5px;">eeetube</h1>
+            <p style="color: #aaa; margin-bottom: 20px;">Private YouTube Streamer (No API / Secret Mode)</p>
+            
+            <div class="search-box">
+                <input type="text" id="youtubeUrl" placeholder="YouTubeの動画URLまたは動画IDをペースト">
+                <button onclick="playVideo()">再生</button>
             </div>
-            <div id="video-title">
-                <span id="video-title-text">ストリームパケット結合完了</span>
-                <button class="switch-player-btn" onclick="rotateStreamPipeline()">バイパスパイプライン切替</button>
+
+            <div class="video-wrapper" id="videoWrapper">
+                <iframe id="player" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
-        </section>
+        </div>
 
-    </main>
-
-    <div id="log-console" class="hidden">
-        <div class="log-entry log-info">[SYSTEM] eeetube core terminal initialized.</div>
     </div>
 
     <script>
-        const YUZUHA_ARCHIVES = [
-            { videoId: '7XqP02f4XQo', title: '【ゆっくり茶番劇】商標登録問題について。事の経緯と今後の対応を解説', author: 'ニュース解説Ch' },
-            { videoId: 'D2vGg6wNskE', title: '【炎上】ゆっくり茶番劇商標登録、なぜここまで大騒動になったのか？裏側を暴く', author: 'ドキュメンタリー裏側' },
-            { videoId: '3uDba0S6uDo', title: 'ゆずは氏による商標権放棄の発表と、一連の騒動による影響', author: 'ネット世論まとめ' },
-            { videoId: 'R9G6bKzC-uQ', title: '【法律解説】ゆっくり茶番劇の商標登録はなぜ特許庁に通ってしまったのか？', author: '弁護士ニュース解説' },
-            { videoId: 'Xb2k7ZzS8w8', title: '東方Project公式およびドワンゴの迅速な神対応を時系列で振り返る動画', author: 'ガジェット通信アーカイブ' }
-        ];
-
-        const INVIDIOUS_STREAM_NODES = [
-            'https://invidious.nerdvpn.de/latest_version?id=',
-            'https://iv.melmac.space/latest_version?id=',
-            'https://invidious.flokinet.to/latest_version?id=',
-            'https://inv.tux.digital/latest_version?id='
-        ];
-
-        let CURRENT_VIDEO_ID = '';
-        let CURRENT_PIPELINE_INDEX = 0;
-        let IS_ROTATING = false; // 連続切り替えの暴走を防ぐガードフラグ
-
+        // パスワード自動判定
         function checkPassword() {
-            if (document.getElementById('gate-pass').value === 'eeeisgod') {
-                activateEeeTube();
-            }
-        }
-
-        function activateEeeTube() {
-            document.getElementById('dummy-study-site').style.display = 'none';
-            document.getElementById('true-sidebar').classList.remove('hidden');
-            document.getElementById('true-main').classList.remove('hidden');
-            document.getElementById('log-console').classList.remove('hidden');
-            document.body.classList.add('dark-mode');
-            document.getElementById('site-title').textContent = 'eeeTUBE';
+            const codeInput = document.getElementById('accessCode').value.trim();
             
-            document.getElementById('dynamic-favicon').setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
-
-            addLog('認証成功。ストリームガードマトリクスを展開。', 'success');
-            loadYuzuhaTrend();
-        }
-
-        function addLog(text, type = 'info') {
-            const consoleEl = document.getElementById('log-console');
-            if (!consoleEl) return;
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
-            consoleEl.appendChild(entry);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-        }
-
-        function switchMode(mode) {
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.content-panel').forEach(el => el.classList.remove('active'));
-            document.getElementById(`menu-${mode}`).classList.add('active');
-            document.getElementById(`panel-${mode}`).classList.add('active');
-            addLog(`メニュー切り替え -> [${mode}]`);
-        }
-
-        function loadYuzuhaTrend() {
-            displayVideos(YUZUHA_ARCHIVES, 'trend-grid');
-        }
-
-        function simulateSearch() {
-            const query = document.getElementById('search-input').value.trim();
-            if (!query) return;
-            addLog(`【検索】ローカルミラーから「${query}」関連パケットを出力。`, 'success');
-            const simulatedList = YUZUHA_ARCHIVES.map((v, i) => ({
-                ...v,
-                title: `[安全ストリーム] ${query} 徹底検証ビデオPart.${i+1}`
-            }));
-            displayVideos(simulatedList, 'search-grid');
-        }
-
-        function loadDirectVideo() {
-            const input = document.getElementById('direct-input').value.trim();
-            if (!input) return;
-
-            let videoId = input;
-            if (input.includes('youtube.com') || input.includes('youtu.be')) {
-                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-                const match = input.match(regExp);
-                if (match && match[2].length === 11) videoId = match[2];
-            }
-
-            if(videoId.length !== 11) {
-                alert('11文字の動画ID、またはURLを入力してください。');
-                return;
-            }
-            IS_ROTATING = false; // 新規ロード時はフラグをリセット
-            injectDirectStream(videoId, "手動バイパス・インジェクションストリーム");
-        }
-
-        function displayVideos(videos, targetGridId) {
-            const grid = document.getElementById(targetGridId);
-            if (!grid) return;
-            grid.innerHTML = '';
-
-            videos.forEach(video => {
-                const card = document.createElement('div');
-                card.className = 'video-card';
-                card.onclick = () => {
-                    IS_ROTATING = false; // 新規選択時はリセット
-                    injectDirectStream(video.videoId, video.title);
-                };
+            // パスワードが「eeeisgod」になった瞬間に切り替え
+            if (codeInput === 'eeeisgod') {
+                document.getElementById('study-space').style.display = 'none';
+                document.getElementById('eeetube-space').style.display = 'block';
                 
-                const localThumbnailSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" style="background:%23252525;"><polygon points="130,60 210,90 130,120" fill="%23ff0000"/><text x="10" y="165" fill="%23aaaaaa" font-size="12" font-family="sans-serif">DIRECT STREAM READY</text></svg>`;
-
-                card.innerHTML = `
-                    <img class="thumbnail" src='${localThumbnailSvg}'>
-                    <div class="video-info">
-                        <p class="video-card-title">${video.title}</p>
-                        <p class="channel-title">${video.author || 'Invisible Feed'}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+                // デザインをダークモード（eeetube仕様）に変形
+                document.body.classList.add('dark-mode');
+                document.getElementById('site-logo').innerText = 'eeetube';
+                document.getElementById('site-logo').style.color = '#ff0000';
+                document.getElementById('status-tag').innerText = '管理者モード（シークレット）';
+                document.getElementById('status-tag').style.color = '#ff3333';
+                
+                document.getElementById('youtubeUrl').focus();
+            }
         }
 
-        function injectDirectStream(videoId, title) {
-            CURRENT_VIDEO_ID = videoId;
-            const playerSection = document.getElementById('player-section');
-            const videoElement = document.getElementById('native-core-player');
-            const titleText = document.getElementById('video-title-text');
-
-            titleText.textContent = title;
-            playerSection.style.display = 'block';
+        // 動画再生ロジック
+        function playVideo() {
+            const urlInput = document.getElementById('youtubeUrl').value.trim();
+            const player = document.getElementById('player');
+            const wrapper = document.getElementById('videoWrapper');
             
-            playerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (!urlInput) { alert('URLを入力してください。'); return; }
 
-            const targetStreamUrl = `${INVIDIOUS_STREAM_NODES[CURRENT_PIPELINE_INDEX]}${videoId}&itag=22&local=true`;
-            addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] へ接続。(ID: ${videoId})`, 'info');
-            
-            // リスナーの重複登録を防ぐため一度クリア
-            videoElement.onerror = null; 
-
-            videoElement.src = targetStreamUrl;
-            videoElement.load();
-            
-            // 軽微なロードエラーやブラウザのフライング検知を無視し、本当にデータが取得できない場合のみ迂回
-            videoElement.onerror = function() {
-                // すでに切り替え処理中なら重複して実行しない
-                if (IS_ROTATING) return; 
-                
-                // 動的読み込み中のネットワーク遅延(readyStateが0)で、かつソースが存在しない場合のみ判定
-                if (videoElement.networkState === 3 || videoElement.readyState === 0) {
-                    addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] 応答なし。自動迂回を実行します。`, 'fail');
-                    IS_ROTATING = true;
-                    setTimeout(() => rotateStreamPipeline(), 1500); // 1.5秒の猶予を持たせてバッファ
+            let videoId = '';
+            try {
+                if (urlInput.includes('youtu.be/')) {
+                    videoId = urlInput.split('youtu.be/')[1].split(/[?#]/)[0];
+                } else if (urlInput.includes('youtube.com/watch')) {
+                    const urlParams = new URLSearchParams(new URL(urlInput).search);
+                    videoId = urlParams.get('v');
+                } else if (urlInput.includes('youtube.com/embed/')) {
+                    videoId = urlInput.split('embed/')[1].split(/[?#]/)[0];
+                } else if (urlInput.includes('youtube.com/shorts/')) {
+                    videoId = urlInput.split('shorts/')[1].split(/[?#]/)[0];
+                } else if (urlInput.length === 11) {
+                    videoId = urlInput;
                 }
-            };
 
-            videoElement.play().then(() => {
-                IS_ROTATING = false; // 再生成功したらフラグ解除
-                addLog(`ストリーミング再生を開始。`, 'success');
-            }).catch(e => {
-                // 自動再生ブロック対策
-                addLog(`パケット待機中。プレイヤーの再生ボタンを押してストリームを確定してください。`, 'info');
-            });
+                if (videoId && videoId.length === 11) {
+                    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                    wrapper.style.display = 'block';
+                } else {
+                    alert('有効なYouTube URLではありません。');
+                }
+            } catch (error) {
+                alert('URLの解析に失敗しました。');
+            }
         }
-
-        function rotateStreamPipeline() {
-            if (!CURRENT_VIDEO_ID) return;
-            
-            const videoElement = document.getElementById('native-core-player');
-            videoElement.pause(); // 既存のストリームを確実に停止
-            
-            CURRENT_PIPELINE_INDEX = (CURRENT_PIPELINE_INDEX + 1) % INVIDIOUS_STREAM_NODES.length;
-            addLog(`代替パイプライン [${CURRENT_PIPELINE_INDEX}] へシークエンシャル切替を行います...`, 'info');
-            
-            IS_ROTATING = false; // フラグを戻して再接続
-            const titleText = document.getElementById('video-title-text').textContent;
-            injectDirectStream(CURRENT_VIDEO_ID, titleText);
-        }
-
-        document.getElementById('search-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') simulateSearch(); });
-        document.getElementById('direct-input').addEventListener('keypress', function(e) { if (e.key === 'Enter') loadDirectVideo(); });
     </script>
 </body>
 </html>
