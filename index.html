@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eeetube</title>
+    <title>eeetube - Free Public API Instance</title>
     <style>
         :root {
             --bg-color: #0f0f0f;
@@ -55,16 +55,17 @@
         button {
             padding: 10px 20px;
             border: none;
-            background-color: #333;
+            background-color: var(--accent-color);
             color: white;
             border-radius: 0 20px 20px 0;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
             transition: background 0.2s;
         }
 
         button:hover {
-            background-color: #444;
+            background-color: #cc0000;
         }
 
         .container {
@@ -164,8 +165,8 @@
     <header>
         <h1 onclick="location.reload()">eeetube</h1>
         <div class="search-box">
-            <input type="text" id="search-input" placeholder="動画を検索...">
-            <button onclick="searchVideos()">検索</button>
+            <input type="text" id="main-input" placeholder="検索、またはYouTubeのURLを貼り付け...">
+            <button id="main-btn" onclick="handleAction()">実行</button>
         </div>
     </header>
 
@@ -174,89 +175,115 @@
             <div class="video-container">
                 <iframe id="youtube-player" src="" allowfullscreen></iframe>
             </div>
-            <h2 id="video-title">動画タイトル</h2>
+            <h2 id="video-title">動画再生中</h2>
         </section>
 
         <section class="video-grid" id="video-grid">
-            <div class="status-msg" id="status-text">APIキーを設定してください。</div>
+            <div class="status-msg">読み込み中...</div>
         </section>
     </main>
 
     <script>
-        // 🔑 【重要】ここに取得したGoogleのAPIキーを貼り付けてください！
-        const API_KEY = 'YOUR_YOUTUBE_API_KEY_HERE';
+        // 🛠️ 無料のパブリックAPIと、CORS制限を突破するプロキシを合体
+        const CORS_PROXY = 'https://api.allorigins.win/get?url=';
+        const API_BASE = 'https://vid.puffyan.us/api/v1'; // 安定したInvidiousのフリーAPI
 
         window.onload = () => {
-            if (API_KEY === 'YOUR_YOUTUBE_API_KEY_HERE' || API_KEY === '') {
-                showStatus('⚠️ 失敗: コード内の「YOUR_YOUTUBE_API_KEY_HERE」を取得したAPIキーに書き換えてください。');
-                return;
-            }
             fetchTrendingVideos();
         };
 
-        // YouTube公式APIから日本のトレンド（人気）動画を取得
+        // ボタンが押された時、またはEnter時の処理
+        function handleAction() {
+            const inputVal = document.getElementById('main-input').value.trim();
+            if (!inputVal) return;
+
+            // URLまたは動画IDが直接入力された場合
+            if (inputVal.includes('youtube.com') || inputVal.includes('youtu.be') || (inputVal.length === 11 && !inputVal.includes(' '))) {
+                loadDirectVideo(inputVal);
+            } else {
+                // 通常のキーワードならパブリックAPIで検索
+                searchVideos(inputVal);
+            }
+        }
+
+        // 1. 【フリーAPI】トレンド動画の取得
         async function fetchTrendingVideos() {
             showStatus('日本の急上昇を読み込み中...');
-            const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=JP&maxResults=24&key=${API_KEY}`;
+            const targetUrl = `${API_BASE}/trending?region=JP`;
+            
             try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.error) {
-                    showStatus(`APIエラー: ${data.error.message}`);
-                    return;
-                }
-                displayVideos(data.items);
+                // プロキシを経由させてセキュリティブロックを回避
+                const response = await fetch(`${CORS_PROXY}${encodeURIComponent(targetUrl)}`);
+                const outerData = await response.json();
+                const data = JSON.parse(outerData.contents); // プロキシ特有のパース
+                displayVideos(data);
             } catch (error) {
                 console.error(error);
-                showStatus('データの取得に失敗しました。APIキーの設定を確認してください。');
+                showStatus('トレンドの取得に失敗しました。上の窓から検索、またはURLを直接貼り付けてみてください。');
             }
         }
 
-        // YouTube公式APIから検索結果を取得
-        async function searchVideos() {
-            const query = document.getElementById('search-input').value.trim();
-            if (!query) return;
-
+        // 2. 【フリーAPI】動画検索
+        async function searchVideos(query) {
             showStatus(`「${query}」の検索結果を読み込み中...`);
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=24&key=${API_KEY}`;
+            const targetUrl = `${API_BASE}/search?q=${encodeURIComponent(query)}&type=video`;
+            
             try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.error) {
-                    showStatus(`APIエラー: ${data.error.message}`);
-                    return;
-                }
-                if(data.items.length === 0) {
+                const response = await fetch(`${CORS_PROXY}${encodeURIComponent(targetUrl)}`);
+                const outerData = await response.json();
+                const data = JSON.parse(outerData.contents);
+                if(!data || data.length === 0) {
                     showStatus('該当する動画が見つかりませんでした。');
                 } else {
-                    displayVideos(data.items);
+                    displayVideos(data);
                 }
             } catch (error) {
                 console.error(error);
-                showStatus('検索中にエラーが発生しました。');
+                showStatus('検索中にエラーが発生しました。別のキーワードにするか、URL直接入力を試してください。');
             }
         }
 
-        // 画面に動画リストを描画
-        function displayVideos(items) {
+        // 3. 【API不要】URLから直接再生するモード
+        function loadDirectVideo(input) {
+            let videoId = input;
+            if (input.includes('youtube.com') || input.includes('youtu.be')) {
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+                const match = input.match(regExp);
+                if (match && match[2].length === 11) {
+                    videoId = match[2];
+                } else {
+                    alert('URLから動画IDを抽出できませんでした。');
+                    return;
+                }
+            }
+            playVideo(videoId, "直接指定された動画");
+        }
+
+        // 動画リストを画面に描画
+        function displayVideos(videos) {
             const grid = document.getElementById('video-grid');
             grid.innerHTML = '';
 
-            items.forEach(item => {
-                // search APIとvideos APIでIDの構造が異なるのを補正
-                const videoId = item.id.videoId || item.id;
-                const snippet = item.snippet;
-                if (!videoId) return;
+            if (!Array.isArray(videos)) return;
+
+            videos.forEach(video => {
+                if (!video.videoId) return;
 
                 const card = document.createElement('div');
                 card.className = 'video-card';
-                card.onclick = () => playVideo(videoId, snippet.title);
+                card.onclick = () => playVideo(video.videoId, video.title);
+
+                let thumbUrl = 'https://via.placeholder.com/320x180?text=No+Image';
+                if (video.videoThumbnails && video.videoThumbnails.length > 0) {
+                    const mediumThumb = video.videoThumbnails.find(t => t.quality === 'medium') || video.videoThumbnails[0];
+                    thumbUrl = mediumThumb.url;
+                }
 
                 card.innerHTML = `
-                    <img class="thumbnail" src="${snippet.thumbnails.medium.url}" loading="lazy" alt="${snippet.title}">
+                    <img class="thumbnail" src="${thumbUrl}" loading="lazy" alt="${video.title}">
                     <div class="video-info">
-                        <p class="video-card-title">${snippet.title}</p>
-                        <p class="channel-title">${snippet.channelTitle}</p>
+                        <p class="video-card-title">${video.title}</p>
+                        <p class="channel-title">${video.author || '不明なチャンネル'}</p>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -270,7 +297,7 @@
             const titleElement = document.getElementById('video-title');
 
             player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-            titleElement.innerHTML = title; // 公式APIはエスケープ文字を含むことがあるためinnerHTML
+            titleElement.textContent = title;
             playerSection.style.display = 'block';
 
             playerSection.scrollIntoView({ behavior: 'smooth' });
@@ -281,9 +308,10 @@
             grid.innerHTML = `<div class="status-msg">${msg}</div>`;
         }
 
-        document.getElementById('search-input').addEventListener('keypress', function(e) {
+        // Enterキー対応
+        document.getElementById('main-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                searchVideos();
+                handleAction();
             }
         });
     </script>
