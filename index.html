@@ -1,560 +1,74 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2D APEX</title>
-    <link rel="icon" href="https://fonts.gstatic.com/s/e/notoemoji/latest/1f451/512.webp" type="image/webp">
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            text-align: center; 
-            background: #0d0e12; 
-            margin: 0; 
-            padding: 20px;
-            color: #eee; 
-            overflow-x: hidden;
-        }
-        .bg-animation {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, #090a0f 0%, #121520 100%);
-            z-index: -1;
-            overflow: hidden;
-        }
-        .bg-animation::after {
-            content: "";
-            position: absolute;
-            width: 200%; height: 200%;
-            top: -50%; left: -50%;
-            background-image: linear-gradient(rgba(255,204,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,204,0,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            transform: perspective(500px) rotateX(60deg);
-            animation: gridMove 20s linear infinite;
-        }
-        @keyframes gridMove {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 800px; }
-        }
-        .container { 
-            max-width: 550px; 
-            margin: 40px auto; 
-            background: rgba(20, 24, 37, 0.85); 
-            padding: 30px 25px; 
-            border-radius: 12px; 
-            border: 1px solid rgba(255, 204, 0, 0.2);
-            box-shadow: 0 0 25px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,204,0,0.05); 
-            backdrop-filter: blur(10px);
-            position: relative;
-            z-index: 1;
-        }
-        h1 { 
-            font-size: 2.2rem; 
-            margin: 0 0 25px 0; 
-            color: #ffcc00; 
-            font-weight: 900; 
-            letter-spacing: 4px; 
-            text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(255,204,0,0.5), 2px 2px 0px #ff3333;
-            font-style: italic;
-        }
-        .input-group { margin-bottom: 18px; text-align: left; }
-        label { 
-            font-size: 0.75rem; 
-            font-weight: bold; 
-            color: #8a94a6; 
-            display: block; 
-            margin-bottom: 6px; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        input[type="text"] { 
-            width: 100%; 
-            padding: 12px 14px; 
-            border: 1px solid #2c354a; 
-            background: rgba(10, 12, 19, 0.9); 
-            color: #fff; 
-            border-radius: 6px; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-        }
-        input[type="text"]:focus {
-            border-color: #ffcc00;
-            box-shadow: 0 0 10px rgba(255,204,0,0.25), inset 0 2px 4px rgba(0,0,0,0.5);
-            outline: none;
-        }
-        button { 
-            width: 100%; 
-            padding: 14px; 
-            background: linear-gradient(135deg, #ff9900 0%, #ffcc00 100%); 
-            color: #111; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: 900; 
-            font-size: 16px; 
-            margin-top: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(255,153,0,0.4);
-            transition: all 0.2s ease;
-        }
-        button:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255,204,0,0.6);
-            background: linear-gradient(135deg, #ffcc00 0%, #ffee55 100%);
-        }
-        button:active { transform: translateY(1px); }
-        .status { 
-            font-size: 0.85rem; 
-            color: #99aab5; 
-            margin: 20px 0 10px 0; 
-            padding: 10px; 
-            background: rgba(0, 0, 0, 0.4); 
-            border-left: 3px solid #ffcc00;
-            border-radius: 0 4px 4px 0; 
-            font-weight: bold; 
-            text-align: left;
-        }
-        .support-section {
-            background: rgba(230, 81, 0, 0.1); 
-            border: 1px solid rgba(230, 81, 0, 0.3); 
-            padding: 15px; 
-            border-radius: 8px; 
-            margin-top: 25px;
-            text-align: left;
-        }
-        .support-title { margin: 0 0 8px 0; font-size: 0.85rem; color: #ff9900; font-weight: bold; }
-        .support-desc { margin: 0 0 12px 0; font-size: 0.8rem; color: #cbd5e1; line-height: 1.5; }
-        #target-email {
-            color: #ffcc00; background: rgba(0, 0, 0, 0.3); padding: 3px 6px; border: 1px solid rgba(255,204,0,0.3); 
-            border-radius: 4px; cursor: pointer; font-family: monospace; font-size: 0.85rem; display: inline-block;
-        }
-        #amajif-btn { background: linear-gradient(135deg, #e65100 0%, #ff9900 100%); color: white; margin-top: 0; padding: 10px; font-size: 0.85rem; }
-        .chat-promo { 
-            background: rgba(14, 17, 27, 0.7); border: 1px solid rgba(255,204,0,0.15); border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; 
-        }
-        .chat-promo p { margin: 0 0 12px 0; font-size: 0.85rem; font-weight: bold; color: #ffcc00; }
-        .chat-links { display: flex; gap: 10px; }
-        .chat-links a { 
-            flex: 1; text-align: center; background: #1a2030; color: #cbd5e1; padding: 10px; border-radius: 6px; font-size: 0.8rem; 
-            text-decoration: none; font-weight: bold; border: 1px solid #2d3748;
-        }
-        #game-area { position: relative; z-index: 10; }
-        .hud { 
-            display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 1rem; 
-            background: #111420; padding: 12px; border-radius: 6px; border: 1px solid #2c354a;
-        }
-        #gameCanvas { 
-            background: #2b4c1f; display: block; margin: 0 auto; border-radius: 6px; border: 3px solid #222; cursor: crosshair; 
-        }
-        #result-area { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,6,10,0.95); 
-            z-index: 1000; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); 
-        }
-        #result-title { font-size: 2.8rem; font-weight: 900; margin-bottom: 30px; font-style: italic; }
-        #return-btn { width: auto; padding: 14px 40px; font-size: 1.1rem; }
-    </style>
-</head>
-<body>
+// APIキーは不要です！代わりに公開されているInvidiousのインスタンスURLを使用します
+const BASE_URL = 'https://invidious.perennialte.ch/api/v1'; // 調子が悪い時は別のインスタンスURLに変更可能
 
-<div class="bg-animation" id="bg-effect"></div>
+window.onload = () => {
+    fetchTrendingVideos();
+};
 
-<div class="container">
-    <div id="lobby-title-wrap"><h1>2D APEX</h1></div>
-    
-    <div id="login-area">
-        <div class="input-group">
-            <label for="username-input">OPERATOR NAME:</label>
-            <input type="text" id="username-input" value="Player">
-        </div>
-        <div class="input-group">
-            <label for="room-id-input">MATCH ROOM ID:</label>
-            <input type="text" id="room-id-input" placeholder="例: apex1234">
-        </div>
-        <button id="join-btn">READY TO DROP</button>
-        <p class="status" id="status">SYSTEM : 準備完了。部隊を編成してください。</p>
+// トレンド動画の取得
+async function fetchTrendingVideos() {
+    // Invidiousのトレンド取得API
+    const url = `${BASE_URL}/trending?region=JP`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        // Invidiousのデータ構造に合わせてマッピング
+        displayVideos(data);
+    } catch (error) {
+        console.error('エラーが発生しました:', error);
+    }
+}
 
-        <div class="support-section">
-            <p class="support-title">🎁 SUPPLY DROP / 開発者を応援する</p>
-            <p class="support-desc">
-                Amazonギフトカード（15円〜）でジュースをおごっていただけると励みになります！<br>
-                宛先：<strong id="target-email" title="クリックでコピー">kaminoeee@gmail.com</strong>
-            </p>
-            <button id="amajif-btn">アドレスをコピーしてAmazonを開く ↗</button>
-        </div>
+// 動画検索
+async function searchVideos() {
+    const query = document.getElementById('search-input').value;
+    if (!query) return;
 
-        <div class="chat-promo">
-            <p>💬 一緒に遊ぶ仲間を募集しよう：</p>
-            <div class="chat-links">
-                <a href="https://kaminoeee.github.io/chat/" target="_blank">チャットURL1</a>
-                <a href="https://proxykoukanjoeeech.vercel.app/" target="_blank">チャットURL2</a>
+    // Invidiousの検索API
+    const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&type=video`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        displayVideos(data);
+    } catch (error) {
+        console.error('エラーが発生しました:', error);
+    }
+}
+
+// 動画一覧を画面に描画
+function displayVideos(videos) {
+    const grid = document.getElementById('video-grid');
+    grid.innerHTML = '';
+
+    videos.forEach(video => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.onclick = () => playVideo(video.videoId, video.title);
+
+        // サムネイルもInvidiousがキャッシュしている画像などを利用可能
+        const thumbnail = video.videoThumbnails ? video.videoThumbnails.find(t => t.quality === 'medium').url : '';
+
+        card.innerHTML = `
+            <img class="thumbnail" src="${thumbnail}" alt="${video.title}">
+            <div class="video-info">
+                <p class="video-card-title">${video.title}</p>
+                <p class="channel-title">${video.author}</p>
             </div>
-        </div>
-    </div>
-
-    <div id="game-area" style="display: none;">
-        <div class="hud">
-            <div id="my-hp-bar" style="color: #00ff00;">YOUR HP: 100</div>
-            <div id="my-ammo-bar" style="color: #ffcc00;">AMMO: 30/30</div>
-            <div id="peer-hp-bar" style="color: #ff3333;">ENEMY HP: 100</div>
-        </div>
-        <canvas id="gameCanvas" width="550" height="400"></canvas>
-    </div>
-</div>
-
-<div id="result-area">
-    <div id="result-title">YOU ARE THE CHAMPION</div>
-    <button id="return-btn">ロビーに戻る</button>
-</div>
-
-<script>
-    let peer = null, conn = null, myRole = "", gameActive = false, resultShown = false;
-    const loginArea = document.getElementById('login-area'), gameArea = document.getElementById('game-area'), bgEffect = document.getElementById('bg-effect');
-    const lobbyTitleWrap = document.getElementById('lobby-title-wrap');
-    const resultArea = document.getElementById('result-area'), resultTitle = document.getElementById('result-title'), returnBtn = document.getElementById('return-btn');
-    const usernameInput = document.getElementById('username-input'), roomIdInput = document.getElementById('room-id-input'), joinBtn = document.getElementById('join-btn'), statusEl = document.getElementById('status');
-    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d'), myHpEl = document.getElementById('my-hp-bar'), myAmmoEl = document.getElementById('my-ammo-bar'), peerHpEl = document.getElementById('peer-hp-bar');
-
-    let myPlayer, peerPlayer, peerTarget, myBullets, peerBullets;
-    const keys = {};
-    let mouseX = 0, mouseY = 0, isMouseDown = false, shootCooldown = 0;
-    let walls = [], bushes = [], medKits = [];
-    let dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
-    let myHpBarTimer = 0, peerHpBarTimer = 0;
-
-    let lastSentState = { x: 0, y: 0, angle: 0, hp: 100, isFlying: true, isVisible: true, isDead: false };
-    let syncThrottleCounter = 0;
-
-    // Amazon用
-    const targetEmail = document.getElementById('target-email');
-    const amajifBtn = document.getElementById('amajif-btn');
-    targetEmail.addEventListener('click', () => { navigator.clipboard.writeText(targetEmail.innerText); alert('コピーしました！'); });
-    amajifBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(targetEmail.innerText).then(() => {
-            alert('宛先アドレスをコピーしました！Amazonを開きます。');
-            window.open('https://www.amazon.co.jp/dp/B004N3APDU', '_blank');
-        });
+        `;
+        grid.appendChild(card);
     });
+}
 
-    function generateHostMap() {
-        bushes = []; medKits = []; walls = [];
-        const wallCount = 4; 
-        for (let i = 0; i < wallCount; i++) {
-            walls.push({
-                x: Math.floor(Math.random() * 350) + 80, y: Math.floor(Math.random() * 200) + 60,
-                width: Math.random() > 0.5 ? 25 : 80, height: Math.random() > 0.5 ? 100 : 25
-            });
-        }
-        for (let i = 0; i < 3; i++) {
-            bushes.push({ x: Math.floor(Math.random() * 380) + 60, y: Math.floor(Math.random() * 240) + 60, width: 85, height: 75 });
-        }
-        for (let i = 0; i < 4; i++) {
-            medKits.push({ id: i, x: Math.floor(Math.random() * 450) + 40, y: Math.floor(Math.random() * 300) + 40, size: 14, active: true });
-        }
-    }
+// 動画を再生（再生はYouTube公式の埋め込みでも、Invidiousの再生ソースでもOK）
+function playVideo(videoId, title) {
+    const playerSection = document.getElementById('player-section');
+    const player = document.getElementById('youtube-player');
+    const titleElement = document.getElementById('video-title');
 
-    function resetGameState() {
-        myPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Player", isVisible: true, isFlying: true, ammo: 30, maxAmmo: 30, isReloading: false, reloadTimer: 0, angle: 0 };
-        peerPlayer = { x: -999, y: -999, size: 26, hp: 100, isDead: false, name: "Enemy", isVisible: true, isFlying: true, angle: 0 };
-        peerTarget = { x: -999, y: -999 };
-        myBullets = []; peerBullets = [];
-        dropShip = { x: -50, y: 200, speed: 2.5, isActive: true };
-        isMouseDown = false; shootCooldown = 0; myHpBarTimer = 0; peerHpBarTimer = 0;
-        resultShown = false; walls = []; bushes = []; medKits = [];
-        syncThrottleCounter = 0;
-    }
-    resetGameState();
+    // 広告を減らしたい場合は公式埋め込みではなくInvidiousの埋め込みURL（例: https://invidious.perennialte.ch/embed/${videoId}）にすることも可能
+    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    titleElement.textContent = title;
+    playerSection.style.display = 'block';
 
-    joinBtn.addEventListener('click', () => {
-        const roomValue = roomIdInput.value.trim();
-        const nameValue = usernameInput.value.trim() || "Player";
-        if (!roomValue) return;
-
-        myPlayer.name = nameValue;
-        joinBtn.disabled = true; roomIdInput.disabled = true; usernameInput.disabled = true;
-        statusEl.innerText = 'CONNECTING...';
-
-        myRole = "host";
-        peer = new Peer(roomValue);
-        
-        peer.on('open', () => { statusEl.innerText = 'WAITING FOR ENEMY...'; generateHostMap(); });
-        peer.on('connection', (connection) => { conn = connection; setupGameConnection(); });
-        peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') {
-                myRole = "guest"; peer.destroy(); peer = new Peer();
-                peer.on('open', () => { conn = peer.connect(roomValue); setupGameConnection(); });
-            }
-        });
-    });
-
-    function setupGameConnection() {
-        if (!conn) return;
-
-        // 【修正】接続が完全にオープンしてからマップデータを送信する
-        if (myRole === "host") {
-            if (conn.open) {
-                sendMapData();
-            } else {
-                conn.on('open', sendMapData);
-            }
-        }
-
-        conn.on('data', (data) => {
-            // 【修正】受け取ったマップデータを確実にローカル変数へ反映
-            if (data.type === 'map_sync') { 
-                bushes = data.bushes; 
-                medKits = data.medKits; 
-                walls = data.walls; 
-            }
-            else if (data.type === 'state') {
-                peerTarget.x = data.x; peerTarget.y = data.y;
-                if (data.hp < peerPlayer.hp) { peerHpBarTimer = data.isVisible ? 120 : 60; }
-                peerPlayer.hp = data.hp; peerPlayer.name = data.name;
-                peerPlayer.isFlying = data.isFlying; peerPlayer.isVisible = data.isVisible;
-                peerPlayer.isDead = data.isDead; peerPlayer.angle = data.angle;
-                if (peerPlayer.isDead && !resultShown) { endGame(true); }
-            } else if (data.type === 'shoot') {
-                peerBullets.push({ x: data.x, y: data.y, vx: Math.cos(data.angle) * 9.5, vy: Math.sin(data.angle) * 9.5, life: 40 });
-            } else if (data.type === 'medkit_taken') {
-                let kit = medKits.find(k => k.id === data.id); if (kit) kit.active = false;
-            } else if (data.type === 'game_over_signal') {
-                if (data.loserRole === myRole && !resultShown) { endGame(false); }
-                if (data.winnerRole === myRole && !resultShown) { endGame(true); }
-            }
-        });
-        conn.on('close', handleDisconnect); conn.on('error', handleDisconnect);
-        if (conn.open) startGame(); else conn.on('open', startGame);
-    }
-
-    function sendMapData() {
-        if (conn && conn.open) {
-            conn.send({ type: 'map_sync', bushes: bushes, medKits: medKits, walls: walls });
-        }
-    }
-
-    function startGame() {
-        loginArea.style.display = 'none'; lobbyTitleWrap.style.display = 'none'; bgEffect.style.display = 'none'; gameArea.style.display = 'block';
-        const container = document.querySelector('.container');
-        container.style.maxWidth = '600px'; container.style.background = 'transparent'; container.style.border = 'none'; container.style.boxShadow = 'none';
-        gameActive = true; window.requestAnimationFrame(gameLoop);
-    }
-
-    function endGame(isWin) {
-        gameActive = false; resultShown = true; resultArea.style.display = 'flex';
-        if (isWin) { resultTitle.innerText = "🏆 👑 チャンピオン 👑 🏆"; resultTitle.style.color = "#ffcc00"; }
-        else { resultTitle.innerText = "☠️ 部隊全滅(DEFEATED) ☠️"; resultTitle.style.color = "#ff3333"; }
-    }
-
-    returnBtn.addEventListener('click', () => {
-        gameActive = false; if (conn) conn.close(); if (peer) peer.destroy();
-        resultArea.style.display = 'none'; gameArea.style.display = 'none'; loginArea.style.display = 'block'; lobbyTitleWrap.style.display = 'block'; bgEffect.style.display = 'block';
-        const container = document.querySelector('.container');
-        container.style.maxWidth = '550px'; container.style.background = 'rgba(20, 24, 37, 0.85)';
-        container.style.border = '1px solid rgba(255, 204, 0, 0.2)'; container.style.boxShadow = '0 0 25px rgba(0,0,0,0.6)';
-        joinBtn.disabled = false; roomIdInput.disabled = false; usernameInput.disabled = false;
-        statusEl.innerText = 'SYSTEM: ロビーに帰還しました。'; resetGameState();
-    });
-
-    function handleDisconnect() { if (gameActive) { alert('対戦相手との接続が切れました。'); returnBtn.click(); } }
-
-    window.addEventListener('keydown', (e) => { 
-        keys[e.key.toLowerCase()] = true; keys[e.key] = true; 
-        if (e.key.toLowerCase() === 'r' && !myPlayer.isReloading && myPlayer.ammo < myPlayer.maxAmmo && !myPlayer.isFlying && !myPlayer.isDead) {
-            myPlayer.isReloading = true; myPlayer.reloadTimer = 75; 
-        }
-    });
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; keys[e.key] = false; });
-    canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top; });
-    canvas.addEventListener('mousedown', () => { isMouseDown = true; });
-    window.addEventListener('mouseup', () => { isMouseDown = false; });
-
-    function fireSMG() {
-        if (myPlayer.isDead || !conn || !conn.open || !gameActive || myPlayer.isReloading || myPlayer.isFlying) return;
-        if (myPlayer.ammo <= 0) { myPlayer.isReloading = true; myPlayer.reloadTimer = 75; return; }
-
-        const pCenterX = myPlayer.x + myPlayer.size / 2, pCenterY = myPlayer.y + myPlayer.size / 2;
-        const spread = (Math.random() - 0.5) * 0.08, finalAngle = myPlayer.angle + spread;
-        const spawnX = pCenterX + Math.cos(finalAngle) * 20, spawnY = pCenterY + Math.sin(finalAngle) * 20;
-
-        myBullets.push({ x: spawnX, y: spawnY, vx: Math.cos(finalAngle) * 9.5, vy: Math.sin(finalAngle) * 9.5, life: 40 });
-        myPlayer.ammo--; 
-
-        conn.send({ type: 'shoot', x: spawnX, y: spawnY, angle: finalAngle });
-        shootCooldown = 6; 
-    }
-
-    function checkWallCollision(nextX, nextY, size) {
-        for (let w of walls) { if (nextX + size > w.x && nextX < w.x + w.width && nextY + size > w.y && nextY < w.y + w.height) return true; }
-        return false;
-    }
-
-    function resolveWallStack() {
-        let attempts = 0;
-        while (checkWallCollision(myPlayer.x, myPlayer.y, myPlayer.size) && attempts < 50) { myPlayer.y += 4; attempts++; }
-    }
-
-    function gameLoop() {
-        if (!gameActive) return;
-        const playerSpeed = 1.7;
-
-        if (dropShip.isActive) {
-            dropShip.x += dropShip.speed;
-            if (dropShip.x > canvas.width + 50) {
-                dropShip.isActive = false;
-                if (myPlayer.isFlying) { myPlayer.x = canvas.width - 50; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); }
-            }
-            if (myPlayer.isFlying && (keys[' '] || keys['e'])) { myPlayer.x = dropShip.x; myPlayer.y = dropShip.y; myPlayer.isFlying = false; resolveWallStack(); }
-        }
-
-        if (!myPlayer.isDead && !myPlayer.isFlying) {
-            let nextX = myPlayer.x; let nextY = myPlayer.y;
-            if (keys['w']) { if (nextY - playerSpeed > 0 && !checkWallCollision(nextX, nextY - playerSpeed, myPlayer.size)) nextY -= playerSpeed; }
-            if (keys['s']) { if (nextY + playerSpeed < canvas.height - myPlayer.size && !checkWallCollision(nextX, nextY + playerSpeed, myPlayer.size)) nextY += playerSpeed; }
-            if (keys['a']) { if (nextX - playerSpeed > 0 && !checkWallCollision(nextX - playerSpeed, nextY, myPlayer.size)) nextX -= playerSpeed; }
-            if (keys['d']) { if (nextX + playerSpeed < canvas.width - myPlayer.size && !checkWallCollision(nextX + playerSpeed, nextY, myPlayer.size)) nextX += playerSpeed; }
-            myPlayer.x = nextX; myPlayer.y = nextY;
-            myPlayer.angle = Math.atan2(mouseY - (myPlayer.y + myPlayer.size / 2), mouseX - (myPlayer.x + myPlayer.size / 2));
-        }
-
-        if (shootCooldown > 0) shootCooldown--;
-        if (isMouseDown && shootCooldown === 0) { fireSMG(); }
-
-        if (myPlayer.isReloading) {
-            myPlayer.reloadTimer--;
-            if (myPlayer.reloadTimer <= 0) { myPlayer.ammo = myPlayer.maxAmmo; myPlayer.isReloading = false; }
-        }
-
-        let inBush = false;
-        if (!myPlayer.isFlying && !myPlayer.isDead) {
-            for (let b of bushes) {
-                if (myPlayer.x > b.x && myPlayer.x + myPlayer.size < b.x + b.width && myPlayer.y > b.y && myPlayer.y + myPlayer.size < b.y + b.height) { inBush = true; break; }
-            }
-        }
-        myPlayer.isVisible = !inBush;
-
-        if (!peerPlayer.isFlying) {
-            peerPlayer.x += (peerTarget.x - peerPlayer.x) * 0.35; 
-            peerPlayer.y += (peerTarget.y - peerPlayer.y) * 0.35;
-        } else {
-            peerPlayer.x = -999; peerPlayer.y = -999;
-        }
-
-        if (!myPlayer.isDead && !myPlayer.isFlying) {
-            const pCenterX = myPlayer.x + myPlayer.size/2, pCenterY = myPlayer.y + myPlayer.size/2;
-            for (let kit of medKits) {
-                if (kit.active && Math.hypot(pCenterX - kit.x, pCenterY - kit.y) < myPlayer.size/2 + kit.size/2) {
-                    myPlayer.hp = Math.min(myPlayer.hp + 30, 100); kit.active = false;
-                    conn.send({ type: 'medkit_taken', id: kit.id });
-                }
-            }
-        }
-
-        syncThrottleCounter++;
-        if (conn && conn.open && syncThrottleCounter % 2 === 0) {
-            const hasChanged = Math.abs(lastSentState.x - myPlayer.x) > 0.5 || 
-                               Math.abs(lastSentState.y - myPlayer.y) > 0.5 || 
-                               Math.abs(lastSentState.angle - myPlayer.angle) > 0.05 || 
-                               lastSentState.hp !== myPlayer.hp || 
-                               lastSentState.isDead !== myPlayer.isDead ||
-                               lastSentState.isVisible !== myPlayer.isVisible ||
-                               lastSentState.isFlying !== myPlayer.isFlying;
-
-            if (hasChanged) {
-                conn.send({ type: 'state', x: myPlayer.x, y: myPlayer.y, hp: myPlayer.hp, name: myPlayer.name, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead, angle: myPlayer.angle });
-                lastSentState = { x: myPlayer.x, y: myPlayer.y, angle: myPlayer.angle, hp: myPlayer.hp, isFlying: myPlayer.isFlying, isVisible: myPlayer.isVisible, isDead: myPlayer.isDead };
-            }
-        }
-
-        if (myHpBarTimer > 0) myHpBarTimer--;
-        if (peerHpBarTimer > 0) peerHpBarTimer--;
-
-        for (let i = myBullets.length - 1; i >= 0; i--) {
-            let b = myBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            let hitWall = false; for (let w of walls) { if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; } }
-            if (hitWall || b.life <= 0) { myBullets.splice(i, 1); }
-        }
-        for (let i = peerBullets.length - 1; i >= 0; i--) {
-            let b = peerBullets[i]; b.x += b.vx; b.y += b.vy; b.life--;
-            let hitWall = false; for (let w of walls) { if (b.x >= w.x && b.x <= w.x + w.width && b.y >= w.y && b.y <= w.y + w.height) { hitWall = true; break; } }
-            if (hitWall) { peerBullets.splice(i, 1); continue; }
-            if (!myPlayer.isDead && !myPlayer.isFlying && b.x > myPlayer.x && b.x < myPlayer.x + myPlayer.size && b.y > myPlayer.y && b.y < myPlayer.y + myPlayer.size) {
-                myPlayer.hp -= 3; myHpBarTimer = 120;
-                if (myPlayer.hp <= 0 && !myPlayer.isDead) {
-                    myPlayer.hp = 0; myPlayer.isDead = true;
-                    conn.send({ type: 'game_over_signal', loserRole: myRole, winnerRole: (myRole === "host" ? "guest" : "host") });
-                    endGame(false);
-                }
-                peerBullets.splice(i, 1); continue;
-            }
-            if (b.life <= 0) peerBullets.splice(i, 1);
-        }
-
-        myHpEl.innerText = `YOUR HP: ${myPlayer.hp}`;
-        myAmmoEl.innerText = myPlayer.isReloading ? `🔄 RELOADING...` : `AMMO: ${myPlayer.ammo}/${myPlayer.maxAmmo}`;
-        peerHpEl.innerText = `${peerPlayer.name} HP: ${peerPlayer.hp}`;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const myCenterX = myPlayer.x + myPlayer.size / 2, myCenterY = myPlayer.y + myPlayer.size / 2;
-
-        bushes.forEach(b => {
-            ctx.fillStyle = (!myPlayer.isVisible && Math.hypot(myCenterX - (b.x + b.width/2), myCenterY - (b.y + b.height/2)) < 90) ? 'rgba(35, 110, 26, 0.45)' : 'rgba(19, 64, 14, 0.85)';  
-            ctx.fillRect(b.x, b.y, b.width, b.height);
-        });
-        ctx.fillStyle = '#666'; walls.forEach(w => ctx.fillRect(w.x, w.y, w.width, w.height));
-        medKits.forEach(kit => {
-            if (kit.active) {
-                ctx.fillStyle = '#fff'; ctx.fillRect(kit.x - kit.size/2, kit.y - kit.size/2, kit.size, kit.size);
-                ctx.fillStyle = '#ff0000'; ctx.fillRect(kit.x - 2, kit.y - kit.size/2 + 2, 4, kit.size - 4); ctx.fillRect(kit.x - kit.size/2 + 2, kit.y - 2, kit.size - 4, 4);
-            }
-        });
-
-        if (!myPlayer.isFlying) {
-            ctx.save(); ctx.globalAlpha = myPlayer.isVisible ? 1.0 : 0.4;
-            if (!myPlayer.isDead) {
-                ctx.save(); ctx.translate(myCenterX, myCenterY); ctx.rotate(myPlayer.angle);
-                ctx.fillStyle = '#555'; ctx.fillRect(5, -3, 18, 6); ctx.restore();
-            }
-            ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(myPlayer.isDead ? '☠️' : '🟢', myCenterX, myCenterY); ctx.restore();
-            ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(myPlayer.name, myPlayer.x + myPlayer.size/2, myPlayer.y - 8);
-        }
-
-        if (!peerPlayer.isDead && !peerPlayer.isFlying) {
-            const peerCenterX = peerPlayer.x + peerPlayer.size / 2, peerCenterY = peerPlayer.y + peerPlayer.size / 2;
-            if (peerPlayer.isVisible || (peerHpBarTimer > 0) || (!myPlayer.isVisible && Math.hypot(myCenterX - peerCenterX, myCenterY - peerCenterY) < 90)) {
-                ctx.save(); ctx.globalAlpha = peerPlayer.isVisible ? 1.0 : 0.6;
-                ctx.save(); ctx.translate(peerCenterX, peerCenterY); ctx.rotate(peerPlayer.angle);
-                ctx.fillStyle = '#555'; ctx.fillRect(5, -3, 18, 6); ctx.restore();
-                ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('🔴', peerCenterX, peerCenterY); ctx.restore();
-                ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(peerPlayer.name, peerPlayer.x + peerPlayer.size/2, peerPlayer.y - 8);
-            }
-        }
-
-        if (dropShip.isActive) {
-            ctx.fillStyle = '#888'; ctx.fillRect(dropShip.x - 25, dropShip.y - 10, 50, 20);
-            if (myPlayer.isFlying) { ctx.fillStyle = '#fff'; ctx.font = '11px sans-serif'; ctx.fillText('🚀 SPACEかEで降下！', dropShip.x - 40, dropShip.y + 30); }
-        }
-
-        ctx.fillStyle = '#ffff00'; myBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
-        ctx.fillStyle = '#ff00ff'; peerBullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 4));
-
-        if (!myPlayer.isFlying) {
-            ctx.save();
-            ctx.globalCompositeOperation = 'destination-in';
-            ctx.fillStyle = 'rgba(0,0,0,1)';
-            ctx.beginPath();
-            ctx.arc(myCenterX, myCenterY, 150, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-        }
-
-        window.requestAnimationFrame(gameLoop);
-    }
-</script>
-</body>
-</html>
+    playerSection.scrollIntoView({ behavior: 'smooth' });
+}
