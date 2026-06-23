@@ -183,10 +183,9 @@
     </main>
 
     <script>
-        // APIキー不要！パブリックなInvidiousインスタンスのURLを使用します
-        const BASE_URL = 'https://invidious.perennialte.ch/api/v1';
+        // 現在比較的安定している別の高稼働インスタンスに変更
+        const BASE_URL = 'https://iv.melmac.space/api/v1';
 
-        // 起動時に日本のトレンド動画を取得
         window.onload = () => {
             fetchTrendingVideos();
         };
@@ -202,7 +201,7 @@
                 displayVideos(data);
             } catch (error) {
                 console.error(error);
-                showStatus('データの取得に失敗しました。時間をおいて試すか、検索をお試しください。');
+                showStatus('現在サーバーが混み合っています。上の検索窓から直接検索を試してみてください。');
             }
         }
 
@@ -217,14 +216,14 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('サーバーエラー');
                 const data = await response.json();
-                if(data.length === 0) {
+                if(!data || data.length === 0) {
                     showStatus('該当する動画が見つかりませんでした。');
                 } else {
                     displayVideos(data);
                 }
             } catch (error) {
                 console.error(error);
-                showStatus('検索中にエラーが発生しました。');
+                showStatus('検索中にエラーが発生しました。時間を置いて再度お試しください。');
             }
         }
 
@@ -233,15 +232,18 @@
             const grid = document.getElementById('video-grid');
             grid.innerHTML = '';
 
+            if (!Array.isArray(videos)) {
+                showStatus('データの形式が正しくありません。');
+                return;
+            }
+
             videos.forEach(video => {
-                // 必要なデータが揃っているかチェック
                 if (!video.videoId) return;
 
                 const card = document.createElement('div');
                 card.className = 'video-card';
                 card.onclick = () => playVideo(video.videoId, video.title);
 
-                // サムネイル画像の選定
                 let thumbUrl = 'https://via.placeholder.com/320x180?text=No+Image';
                 if (video.videoThumbnails && video.videoThumbnails.length > 0) {
                     const mediumThumb = video.videoThumbnails.find(t => t.quality === 'medium') || video.videoThumbnails[0];
@@ -265,22 +267,18 @@
             const player = document.getElementById('youtube-player');
             const titleElement = document.getElementById('video-title');
 
-            // YouTube公式のクリーンな埋め込みプレイヤーを使用
             player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
             titleElement.textContent = title;
             playerSection.style.display = 'block';
 
-            // プレイヤー位置までスムーズにスクロール
             playerSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 状態メッセージ表示用
         function showStatus(msg) {
             const grid = document.getElementById('video-grid');
             grid.innerHTML = `<div class="status-msg">${msg}</div>`;
         }
 
-        // Enterキーでの検索に対応
         document.getElementById('search-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchVideos();
