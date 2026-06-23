@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -70,7 +71,6 @@
         .direct-info-box h3 { margin-top: 0; font-size: 15px; color: #fff; }
         .direct-info-box p { margin-bottom: 0; font-size: 13px; color: #aaa; line-height: 1.5; }
 
-        /* 📺 入力欄を邪魔しないように「下側」へ展開するプレイヤー構造 */
         .player-section { display: none; background-color: var(--card-bg); padding: 15px; border-radius: 12px; max-width: 800px; width: 100%; margin: 20px auto 0 auto; border: 1px solid #333; }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; }
         .video-container video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; outline: none; }
@@ -94,6 +94,7 @@
 </head>
 <body>
 
+    <!-- ================= 表：ダミー学習サイト ================= -->
     <div id="dummy-study-site">
         <div class="study-container">
             <h2>毎日英単語トレーニング</h2>
@@ -108,6 +109,7 @@
         </div>
     </div>
 
+    <!-- ================= 裏：eeeTUBE ================= -->
     <aside id="true-sidebar" class="hidden">
         <div class="logo-area">
             <div class="yt-icon"></div>
@@ -122,10 +124,12 @@
 
     <main id="true-main" class="hidden">
         
+        <!-- ゆずは事件 特設フィード -->
         <div class="content-panel active" id="panel-trend">
             <div class="video-grid" id="trend-grid"></div>
         </div>
 
+        <!-- 完結型検索パネル -->
         <div class="content-panel" id="panel-search">
             <div class="input-wrapper">
                 <input type="text" id="search-input" placeholder="キーワードを入力（規制環境のためローカルミラー展開）...">
@@ -136,6 +140,7 @@
             </div>
         </div>
 
+        <!-- URL直打ちパネル -->
         <div class="content-panel" id="panel-direct">
             <div class="input-wrapper">
                 <input type="text" id="direct-input" placeholder="YouTube動画のURL または 動画ID(11文字) を入力...">
@@ -147,6 +152,7 @@
             </div>
         </div>
 
+        <!-- 📺 プレイヤーセクション -->
         <section class="player-section" id="player-section">
             <div class="video-container">
                 <video id="native-core-player" controls autoplay preload="auto"></video>
@@ -181,6 +187,7 @@
 
         let CURRENT_VIDEO_ID = '';
         let CURRENT_PIPELINE_INDEX = 0;
+        let IS_ROTATING = false; // 連続切り替えの暴走を防ぐガードフラグ
 
         function checkPassword() {
             if (document.getElementById('gate-pass').value === 'eeeisgod') {
@@ -198,7 +205,7 @@
             
             document.getElementById('dynamic-favicon').setAttribute('href', 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%2270%22 y=%2215%22 rx=%2220%22 fill=%22%23ff0000%22/><polygon points=%2240,30 70,50 40,70%22 fill=%22%23ffffff%22/></svg>');
 
-            addLog('認証成功。UIレイアウト最適化マトリクスを適用。', 'success');
+            addLog('認証成功。ストリームガードマトリクスを展開。', 'success');
             loadYuzuhaTrend();
         }
 
@@ -217,10 +224,6 @@
             document.querySelectorAll('.content-panel').forEach(el => el.classList.remove('active'));
             document.getElementById(`menu-${mode}`).classList.add('active');
             document.getElementById(`panel-${mode}`).classList.add('active');
-            
-            // モード切り替え時にプレイヤーを一旦隠してすっきりさせる（任意）
-            // document.getElementById('player-section').style.display = 'none';
-            
             addLog(`メニュー切り替え -> [${mode}]`);
         }
 
@@ -254,6 +257,7 @@
                 alert('11文字の動画ID、またはURLを入力してください。');
                 return;
             }
+            IS_ROTATING = false; // 新規ロード時はフラグをリセット
             injectDirectStream(videoId, "手動バイパス・インジェクションストリーム");
         }
 
@@ -265,7 +269,10 @@
             videos.forEach(video => {
                 const card = document.createElement('div');
                 card.className = 'video-card';
-                card.onclick = () => injectDirectStream(video.videoId, video.title);
+                card.onclick = () => {
+                    IS_ROTATING = false; // 新規選択時はリセット
+                    injectDirectStream(video.videoId, video.title);
+                };
                 
                 const localThumbnailSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" style="background:%23252525;"><polygon points="130,60 210,90 130,120" fill="%23ff0000"/><text x="10" y="165" fill="%23aaaaaa" font-size="12" font-family="sans-serif">DIRECT STREAM READY</text></svg>`;
 
@@ -289,31 +296,49 @@
             titleText.textContent = title;
             playerSection.style.display = 'block';
             
-            // 入力フォームの邪魔にならないよう、プレイヤーが見える位置までスムーズに下スクロールさせる
             playerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             const targetStreamUrl = `${INVIDIOUS_STREAM_NODES[CURRENT_PIPELINE_INDEX]}${videoId}&itag=22&local=true`;
-            addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] へ動画ソースを直接流し込み。(ID: ${videoId})`, 'info');
+            addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] へ接続。(ID: ${videoId})`, 'info');
             
+            // リスナーの重複登録を防ぐため一度クリア
+            videoElement.onerror = null; 
+
             videoElement.src = targetStreamUrl;
             videoElement.load();
             
+            // 軽微なロードエラーやブラウザのフライング検知を無視し、本当にデータが取得できない場合のみ迂回
             videoElement.onerror = function() {
-                addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] 遮断。自動迂回シークエンスを実行。`, 'fail');
-                setTimeout(() => rotateStreamPipeline(), 300);
+                // すでに切り替え処理中なら重複して実行しない
+                if (IS_ROTATING) return; 
+                
+                // 動的読み込み中のネットワーク遅延(readyStateが0)で、かつソースが存在しない場合のみ判定
+                if (videoElement.networkState === 3 || videoElement.readyState === 0) {
+                    addLog(`パイプライン [${CURRENT_PIPELINE_INDEX}] 応答なし。自動迂回を実行します。`, 'fail');
+                    IS_ROTATING = true;
+                    setTimeout(() => rotateStreamPipeline(), 1500); // 1.5秒の猶予を持たせてバッファ
+                }
             };
 
             videoElement.play().then(() => {
-                addLog(`ネイティブ動画パケットのストリーミング再生を開始。`, 'success');
+                IS_ROTATING = false; // 再生成功したらフラグ解除
+                addLog(`ストリーミング再生を開始。`, 'success');
             }).catch(e => {
-                addLog(`パケット待機中。プレイヤーの再生ボタンを押してください。`, 'info');
+                // 自動再生ブロック対策
+                addLog(`パケット待機中。プレイヤーの再生ボタンを押してストリームを確定してください。`, 'info');
             });
         }
 
         function rotateStreamPipeline() {
             if (!CURRENT_VIDEO_ID) return;
+            
+            const videoElement = document.getElementById('native-core-player');
+            videoElement.pause(); // 既存のストリームを確実に停止
+            
             CURRENT_PIPELINE_INDEX = (CURRENT_PIPELINE_INDEX + 1) % INVIDIOUS_STREAM_NODES.length;
-            addLog(`代替パイプライン [${CURRENT_PIPELINE_INDEX}] への接続変更を実行中...`, 'info');
+            addLog(`代替パイプライン [${CURRENT_PIPELINE_INDEX}] へシークエンシャル切替を行います...`, 'info');
+            
+            IS_ROTATING = false; // フラグを戻して再接続
             const titleText = document.getElementById('video-title-text').textContent;
             injectDirectStream(CURRENT_VIDEO_ID, titleText);
         }
